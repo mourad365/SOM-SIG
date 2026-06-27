@@ -79,9 +79,13 @@ export default function Map({
     const start = performance.now();
     const tick = (now) => {
       if (!map.getLayer('transfo-critique-pulse')) { pulseRafRef.current = null; return; }
-      const t = ((now - start) % PERIOD) / PERIOD; // 0..1
-      map.setPaintProperty('transfo-critique-pulse', 'circle-radius', 10 + t * 16);
-      map.setPaintProperty('transfo-critique-pulse', 'circle-opacity', 0.5 * (1 - t));
+      // Skip paint churn while the ring is hidden (transfo layer toggled off) — keep the
+      // loop alive so it resumes instantly when re-shown. rAF already idles when tab hidden.
+      if (map.getLayoutProperty('transfo-critique-pulse', 'visibility') !== 'none') {
+        const t = ((now - start) % PERIOD) / PERIOD; // 0..1
+        map.setPaintProperty('transfo-critique-pulse', 'circle-radius', 10 + t * 16);
+        map.setPaintProperty('transfo-critique-pulse', 'circle-opacity', 0.5 * (1 - t));
+      }
       pulseRafRef.current = requestAnimationFrame(tick);
     };
     pulseRafRef.current = requestAnimationFrame(tick);
