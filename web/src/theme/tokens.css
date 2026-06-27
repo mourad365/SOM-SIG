@@ -1,0 +1,110 @@
+/* SIG SOMELEC — Centre de conduite réseau
+ * Design tokens: dark technical operations console.
+ * Color = signal. green/amber/red are LOAD-STATE ONLY. cyan is INTERACTIVE ONLY.
+ * See docs/design/design-system.md for the reference lock + decision ledger.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ---- Canvas & surfaces (neutral graphite, NOT indigo) ---- */
+  --bg-base:      #0B0E14;   /* app canvas / behind map */
+  --bg-surface:   #131722;   /* panels, top bar, rail */
+  --bg-surface-2: #1C212E;   /* inputs, raised, hover */
+  --bg-surface-3: #252B3B;   /* active row, selected */
+  --scrim:        rgba(5, 7, 11, 0.62);
+
+  /* ---- Borders ---- */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border:        rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.20);
+
+  /* ---- Text ---- */
+  --text-primary:   #E6E9EF;
+  --text-secondary: #9AA4B2;
+  --text-muted:     #687185;
+  --text-inverse:   #0B0E14;
+
+  /* ---- Accent: INTERACTIVE ONLY (focus, links, active, selection) ---- */
+  --accent:        #38BDF8;
+  --accent-hover:  #5CCBFA;
+  --accent-press:  #1BA5E4;
+  --accent-soft:   rgba(56, 189, 248, 0.14);
+  --focus-ring:    0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+
+  /* ---- Load-state semantics: SIGNAL ONLY (never chrome) ---- */
+  --load-normal:    #2BB673;
+  --load-surcharge: #F5A524;
+  --load-critique:  #F0453A;
+  --load-inconnu:   #5A6473;
+  --load-normal-soft:    rgba(43, 182, 115, 0.16);
+  --load-surcharge-soft: rgba(245, 165, 36, 0.16);
+  --load-critique-soft:  rgba(240, 69, 58, 0.18);
+  --load-critique-glow:  rgba(240, 69, 58, 0.55);
+
+  /* ---- Typography ---- */
+  --font-ui:   'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+  --fs-micro: 11px;  /* uppercase tracked labels */
+  --fs-xs:    12px;
+  --fs-sm:    13px;
+  --fs-base:  14px;
+  --fs-md:    16px;  /* section titles */
+  --fs-lg:    20px;  /* panel titles */
+  --fs-xl:    28px;  /* KPI hero number (mono) */
+  --fs-2xl:   34px;
+  --tracking-caps: 0.08em;
+
+  /* ---- Spacing (4px base) ---- */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+
+  /* ---- Radius (near-sharp / technical) ---- */
+  --r-sm: 4px; --r-md: 6px; --r-lg: 8px; --r-full: 999px;
+
+  /* ---- Elevation (panels float over map) ---- */
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 4px 16px rgba(0,0,0,0.45);
+  --shadow-3: 0 12px 32px rgba(0,0,0,0.55);
+
+  /* ---- Layout dims ---- */
+  --topbar-h: 48px;
+  --rail-w: 260px;
+  --rail-w-collapsed: 56px;
+  --inspector-w: 360px;
+  --dock-h: 280px;
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 280ms;
+  --z-map: 1; --z-chrome: 10; --z-inspector: 20; --z-modal: 40; --z-toast: 50;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Numeric/data readouts use tabular mono */
+.mono, .tnum { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.caps { text-transform: uppercase; letter-spacing: var(--tracking-caps); font-size: var(--fs-micro); color: var(--text-secondary); }
+
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* Scrollbars (dark) */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--bg-surface-3); border-radius: var(--r-full); border: 2px solid var(--bg-surface); }
+::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
