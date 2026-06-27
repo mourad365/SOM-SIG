@@ -18,7 +18,7 @@ apiRouter.get('/kpi', async (_req, res) => {
 apiRouter.get('/top-surcharges', async (_req, res) => {
   try {
     const { rows } = await query(`
-      SELECT code_actif, taux_charge, classe, puissance_kva
+      SELECT transfo_id, code_actif, taux_charge, classe, puissance_kva
       FROM v_charge_transformateur
       WHERE taux_charge IS NOT NULL
       ORDER BY taux_charge DESC NULLS LAST
@@ -35,7 +35,8 @@ apiRouter.get('/asset/:type/:id', async (req, res) => {
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'bad id' });
   try {
     const { rows } = await query(
-      `SELECT transfo_id, code_actif, puissance_kva, charge_kva, taux_charge, classe
+      `SELECT transfo_id, code_actif, puissance_kva, charge_kva, taux_charge, classe,
+              ST_X(ST_Transform(geom,4326)) AS lng, ST_Y(ST_Transform(geom,4326)) AS lat
        FROM v_charge_transformateur WHERE transfo_id = $1`, [id]);
     if (rows.length === 0) return res.status(404).json({ error: 'not found' });
     res.json(rows[0]);
