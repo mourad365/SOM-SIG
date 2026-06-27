@@ -13,6 +13,9 @@ import {
   recentFilter, recentRingPaint, recentLigneCasingPaint,
 } from './style.js';
 import { classeColorExpr, COLOR, BRAND } from '../theme/tokens.js';
+import {
+  applyTraceHighlight, addTraceHighlightLayers, syncTraceHighlightVisibility, bindTraceRestore,
+} from './trace-highlight.js';
 import { MapLegend } from './MapLegend.jsx';
 import { COORD_FORMATS, formatCoord } from './coords.js';
 import { Select } from '../ui/index.js';
@@ -131,6 +134,7 @@ export default function Map({
   basemap = 'map',
   language = 'fr',
   showRecent = false,
+  highlighted = null, // --- trace --- ids affectés par la trace, par couche
   flyTo,
   onSelectFeature,
 }) {
@@ -141,6 +145,7 @@ export default function Map({
   const pulseRafRef = useRef(null);
   const flowRafRef = useRef(null);
   const markerRef = useRef(null);        // transient pin for fly-to targets
+  const highlightedRef = useRef(null);   // --- trace --- last applied highlight ids
   const coordTextRef = useRef(null);     // live coordinate readout (updated imperatively)
   const lastLngLatRef = useRef(null);    // last hovered lng/lat (for format re-render)
   // Latest props for event handlers bound once.
@@ -228,6 +233,10 @@ export default function Map({
           type: 'vector',
           tiles: [`${TILE_BASE}/tiles/${s}/{z}/{x}/{y}.pbf`],
           minzoom: 6, maxzoom: 20,
+          // --- trace --- promoteId : utilise l'id métier comme feature-state id
+          // (les tuiles ST_AsMVT n'attribuent pas d'id natif). Requis pour le highlight.
+          promoteId: ID_FIELD[s],
+          // --- end trace ---
         });
       }
     });
@@ -313,6 +322,11 @@ export default function Map({
         },
       });
     }
+
+    // --- trace --- couches de surbrillance (feature-state `highlighted`).
+    // Ajoutées en dernier => au-dessus. Réutilisent les sources de tuiles existantes.
+    addTraceHighlightLayers(map);
+    // --- end trace ---
   }
 
   // Bind hover + click handlers (idempotent enough for single mount).
@@ -384,11 +398,19 @@ export default function Map({
         applyLabelLanguage(map, language);
         startPulse(map);
         startFlow(map);
+        bindTraceRestore(map, () => highlightedRef.current); // --- trace ---
       } catch (err) {
         console.warn('Map layer init partial:', err);
       }
       loadedRef.current = true;
       applyState();
+      // --- trace --- réapplique une éventuelle surbrillance après (re)chargement du style.
+      if (highlighted) {
+        applyTraceHighlight(map, null, highlighted);
+        highlightedRef.current = highlighted;
+        syncTraceHighlightVisibility(map, highlighted, layers);
+      }
+      // --- end trace ---
     });
 
     return () => {
@@ -475,6 +497,16 @@ export default function Map({
     markerRef.current?.remove();
     markerRef.current = new maplibregl.Marker({ color: BRAND.blue }).setLngLat(flyTo).addTo(map);
   }, [flyTo]);
+
+  // --- trace --- applique/efface la surbrillance feature-state des actifs affectés.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !loadedRef.current) return;
+    applyTraceHighlight(map, highlightedRef.current, highlighted);
+    highlightedRef.current = highlighted;
+    syncTraceHighlightVisibility(map, highlighted, layers);
+  }, [highlighted, layers]);
+  // --- end trace ---
 
   // Export the current view as a PNG with north arrow, scale, date and an info panel.
   function captureView() {

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from './db.js';
+import { trace, TRACE_TYPES } from './topology.js';
 
 export const apiRouter = Router();
 
@@ -218,3 +219,21 @@ apiRouter.get('/asset/:type/:id', async (req, res) => {
     console.error(err); res.status(500).json({ error: 'asset failed' });
   }
 });
+
+// --- trace routes (Chantier 1 — traçabilité) ---
+// GET /api/trace/:type/:id?direction=down|up  (type ∈ poste|transfo|ligne)
+// Impact amont/aval d'un actif (clients, kVA, actifs touchés). Voir topology.js.
+apiRouter.get('/trace/:type/:id', async (req, res) => {
+  const { type } = req.params;
+  if (!TRACE_TYPES.includes(type)) return res.status(404).json({ error: 'unknown type' });
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(404).json({ error: 'bad id' });
+  const direction = req.query.direction === 'up' ? 'up' : 'down';
+  try {
+    res.json(await trace(type, id, direction));
+  } catch (err) {
+    if (err.status === 404) return res.status(404).json({ error: 'not found' });
+    console.error(err); res.status(500).json({ error: 'trace failed' });
+  }
+});
+// --- end trace routes ---

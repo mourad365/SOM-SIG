@@ -49,6 +49,25 @@
 .map-coordbar__sep { width: 1px; height: 16px; background: var(--border); }
 .map-coordbar__zoom { font-size: var(--fs-xs); color: var(--text-secondary); white-space: nowrap; }
 
+/* ---- Trace d'impact (Chantier 1) — panneau flottant haut-gauche ---- */
+.trace-overlay {
+  position: absolute; left: var(--sp-3); top: var(--sp-3); z-index: var(--z-chrome);
+  width: 270px; max-width: calc(100% - 2 * var(--sp-3));
+}
+.trace-overlay .trace-panel { box-shadow: var(--shadow-2); }
+.trace-body { display: flex; flex-direction: column; gap: var(--sp-3); }
+.trace-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.trace-root-code {
+  font-family: var(--font-mono, monospace); font-weight: 700;
+  font-size: var(--fs-sm); color: var(--text-primary);
+}
+.trace-hero { padding: var(--sp-1) 0; }
+.trace-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.trace-loading {
+  display: flex; align-items: center; gap: var(--sp-2);
+  color: var(--text-secondary); font-size: var(--fs-sm); padding: var(--sp-2) 0;
+}
+
 /* ---- Capture / export button (top-right) ---- */
 .map-capture-btn {
   position: absolute; top: var(--sp-3); right: var(--sp-3); z-index: var(--z-chrome);
