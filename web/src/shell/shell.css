@@ -1,0 +1,67 @@
+/* Operations-console app shell layout. Token-driven dims. */
+.shell {
+  display: grid;
+  grid-template-rows: var(--topbar-h) 1fr auto;
+  height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* ---- Top bar ---- */
+.shell-topbar {
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(280px, 520px) minmax(220px, 1fr);
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  z-index: var(--z-chrome);
+}
+.shell-wordmark { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.shell-wordmark__mark { font-weight: 700; font-size: var(--fs-md); letter-spacing: 0.04em; color: var(--text-primary); }
+.shell-wordmark__sub { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shell-topbar__search { display: flex; justify-content: center; }
+.shell-topbar__right { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); }
+.shell-maj { color: var(--text-secondary); font-size: var(--fs-xs); white-space: nowrap; display: inline-flex; align-items: center; gap: var(--sp-1); }
+.shell-maj__time { font-family: var(--font-mono); color: var(--text-primary); }
+
+/* ---- Main row: rail + map ---- */
+.shell-main {
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 0;
+  position: relative;
+}
+
+/* ---- Left rail ---- */
+.shell-rail {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  width: var(--rail-w);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: width var(--dur-slow) var(--ease-out);
+  z-index: var(--z-chrome);
+}
+.shell-rail--collapsed { width: var(--rail-w-collapsed); }
+.shell-rail__top { display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border-subtle); }
+.shell-rail__body { overflow-y: auto; overflow-x: hidden; padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-5); }
+.shell-rail--collapsed .shell-rail__body { display: none; }
+.shell-rail-section { display: flex; flex-direction: column; gap: var(--sp-3); }
+.shell-rail-section__title { color: var(--text-muted); }
+.shell-rail-section__rows { display: flex; flex-direction: column; gap: var(--sp-3); }
+.shell-rail__field { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+/* ---- Map host ---- */
+.shell-mapwrap { position: relative; min-width: 0; overflow: hidden; }
+
+/* ---- Inspector body ---- */
+.inspector-gauge { display: flex; justify-content: center; padding: var(--sp-4) 0 var(--sp-5); }
+.inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4) var(--sp-5); }
+.inspector-head { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.inspector-code { font-family: var(--font-mono); font-size: var(--fs-md); color: var(--text-primary); }
+.inspector-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-5); }
