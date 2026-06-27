@@ -10,26 +10,36 @@ function fmt(v, digits = 0) {
   return Number(v).toLocaleString('fr-FR', { maximumFractionDigits: digits });
 }
 
-// Right slide-in inspector. Opens when a map feature is selected; loads full asset detail.
+const TYPE_LABEL = {
+  transfo: 'Transformateur', ligne: 'Ligne', poste: 'Poste',
+  point_service: 'Point de service', support: 'Support',
+};
+const LOAD_TYPES = ['transfo', 'ligne'];
+
+// Right slide-in inspector. Opens when a map feature / dashboard row is selected; loads full asset detail.
 export function Inspector({ feature, open, onClose, onFlyTo }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const type = feature?.type || 'transfo';
+  const isLoad = LOAD_TYPES.includes(type);
+
   useEffect(() => {
     if (!feature) return;
-    const id = feature.transfo_id ?? feature.id;
-    // Seed from tile props immediately, then refine with the API call.
-    setDetail(feature);
-    if (id == null) return;
+    const id = feature[`${type}_id`] ?? feature.transfo_id ?? feature.ligne_id ?? feature.id;
+    setDetail(feature); // seed from tile/row props immediately
+    if (id == null || !isLoad) return; // only transfo/ligne have an asset-detail endpoint
     setLoading(true);
-    getAsset('transfo', id)
+    getAsset(type, id)
       .then((d) => { if (d && !d.error) setDetail((prev) => ({ ...prev, ...d })); })
       .catch(() => {})
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feature]);
 
   const d = detail || {};
   const taux = d.taux_charge == null ? null : Number(d.taux_charge);
+  const code = d.code_actif || d.code_poste || d.code || d.num_compteur || '—';
 
   return (
     <Drawer open={open} onClose={onClose} title="Inspecteur d'actif">
@@ -38,26 +48,46 @@ export function Inspector({ feature, open, onClose, onFlyTo }) {
       ) : (
         <>
           <div className="inspector-head">
-            <span className="inspector-code">{d.code_actif || '—'}</span>
+            <span className="inspector-code">{code}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
-              <span className="caps">Transformateur</span>
+              <span className="caps">{TYPE_LABEL[type] || type}</span>
               {d.classe && <Badge classe={d.classe} />}
               {loading && <Spinner size={12} />}
             </div>
           </div>
 
-          <div className="inspector-gauge">
-            <Gauge value={taux} />
-          </div>
+          {isLoad && (
+            <div className="inspector-gauge">
+              <Gauge value={taux} />
+            </div>
+          )}
 
           <div className="inspector-grid">
-            <Stat label="Capacité" value={fmt(d.puissance_kva)} unit="kVA" />
-            <Stat label="Charge" value={fmt(d.charge_kva, 1)} unit="kVA" />
-            <Stat
-              label="Taux de charge"
-              value={taux == null ? '—' : `${Math.round(taux * 100)}%`}
-            />
-            <Stat label="Identifiant" value={num(d.transfo_id)} />
+            {type === 'transfo' && (
+              <>
+                <Stat label="Capacité" value={fmt(d.puissance_kva)} unit="kVA" />
+                <Stat label="Charge" value={fmt(d.charge_kva, 1)} unit="kVA" />
+                <Stat label="Taux de charge" value={taux == null ? '—' : `${Math.round(taux * 100)}%`} />
+                <Stat label="Points de service" value={num(d.n_points ?? d.points_count)} />
+                {d.poste_nom && <Stat label="Poste" value={d.poste_nom} />}
+              </>
+            )}
+            {type === 'ligne' && (
+              <>
+                <Stat label="Niveau tension" value={d.niveau_tension || '—'} />
+                <Stat label="Section" value={fmt(d.section_mm2)} unit="mm²" />
+                <Stat label="Capacité" value={fmt(d.capacite_a)} unit="A" />
+                <Stat label="Longueur" value={fmt(d.longueur_m)} unit="m" />
+                <Stat label="Taux de charge" value={taux == null ? '—' : `${Math.round(taux * 100)}%`} />
+              </>
+            )}
+            {!isLoad && (
+              <>
+                <Stat label="Type" value={d.type_poste || d.type_support || d.type_compteur || '—'} />
+                <Stat label="Statut" value={d.statut || d.etat || '—'} />
+                {d.nom && <Stat label="Nom" value={d.nom} />}
+              </>
+            )}
           </div>
 
           <div className="inspector-actions">

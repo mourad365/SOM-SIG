@@ -1,5 +1,5 @@
 // Map paint expressions — token-driven (see theme/tokens.js). Color = load signal only.
-import { classeColorExpr, OVERLOADED_CLASSES, VOLTAGE } from '../theme/tokens.js';
+import { classeColorExpr, OVERLOADED_CLASSES, VOLTAGE, LOAD, COLOR } from '../theme/tokens.js';
 
 export const CLASSE_COLOR = classeColorExpr;
 
@@ -12,6 +12,7 @@ export const voltageColorExpr = [
   VOLTAGE.BT,
 ];
 
+// ---- Transfo circles ----
 export const transfoCirclePaint = {
   'circle-color': CLASSE_COLOR,
   'circle-radius': ['match', ['get', 'classe'], 'critique', 9, 'surcharge', 7, 5],
@@ -20,26 +21,63 @@ export const transfoCirclePaint = {
   'circle-opacity': 0.95,
 };
 
+// ---- Ligne lines ----
 export const ligneLinePaint = {
   'line-color': CLASSE_COLOR,
   'line-width': ['match', ['get', 'classe'], 'critique', 5, 'surcharge', 3.5, 2],
   'line-opacity': 0.8,
 };
 
-// Heatmap of surcharges — weight by overloaded classes.
+// ---- Poste (larger ringed circles) ----
+export const posteCirclePaint = {
+  'circle-color': COLOR.accent,
+  'circle-radius': 8,
+  'circle-stroke-width': 2.5,
+  'circle-stroke-color': COLOR.bgBase,
+  'circle-opacity': 0.9,
+};
+
+// ---- Point de service (tiny dots, high zoom) ----
+export const pointServiceCirclePaint = {
+  'circle-color': COLOR.textSecondary,
+  'circle-radius': 2.5,
+  'circle-stroke-width': 0.5,
+  'circle-stroke-color': COLOR.bgBase,
+  'circle-opacity': 0.85,
+};
+
+// ---- Support (tiny squares via square-ish small circles, very high zoom) ----
+export const supportCirclePaint = {
+  'circle-color': COLOR.textMuted,
+  'circle-radius': 3,
+  'circle-stroke-width': 0.5,
+  'circle-stroke-color': COLOR.bgBase,
+  'circle-opacity': 0.8,
+};
+
+// Heatmap of surcharges — weight by taux_charge over overloaded transfos.
 export const surchargeHeatmapPaint = {
-  'heatmap-weight': ['match', ['get', 'classe'], 'critique', 1, 'surcharge', 0.6, 0],
+  'heatmap-weight': [
+    'interpolate', ['linear'], ['coalesce', ['get', 'taux_charge'], 0],
+    0, 0,
+    80, 0.5,
+    100, 0.85,
+    150, 1,
+  ],
   'heatmap-intensity': 1.1,
   'heatmap-radius': 28,
   'heatmap-opacity': 0.55,
   'heatmap-color': [
     'interpolate', ['linear'], ['heatmap-density'],
     0, 'rgba(0,0,0,0)',
-    0.4, 'rgba(245,165,36,0.35)',
-    0.8, 'rgba(240,69,58,0.55)',
-    1, 'rgba(240,69,58,0.85)',
+    0.3, 'rgba(43,182,115,0.25)',
+    0.55, 'rgba(245,165,36,0.45)',
+    0.8, 'rgba(240,69,58,0.6)',
+    1, 'rgba(240,69,58,0.9)',
   ],
 };
 
 // Filter: show only surcharge + critique when enabled.
 export const OVERLOADED_FILTER = ['in', ['get', 'classe'], ['literal', OVERLOADED_CLASSES]];
+
+export { LOAD, VOLTAGE };

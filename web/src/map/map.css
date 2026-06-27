@@ -1,4 +1,33 @@
+.ops-map-wrap { position: absolute; inset: 0; }
 .ops-map { position: absolute; inset: 0; }
+
+/* ---- Floating legend (bottom-left, above scale control) ---- */
+.map-legend {
+  position: absolute; left: var(--sp-3); bottom: 40px; z-index: var(--z-chrome);
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); box-shadow: var(--shadow-2);
+  padding: var(--sp-3); min-width: 140px;
+}
+.map-legend__title { margin-bottom: var(--sp-2); }
+
+/* ---- Hover tooltip popup ---- */
+.map-tip-popup .maplibregl-popup-content {
+  background: var(--bg-surface-3); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  box-shadow: var(--shadow-2); padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs);
+}
+.map-tip-popup .maplibregl-popup-tip { display: none; }
+.map-tip__code { font-family: var(--font-mono); font-weight: 600; color: var(--text-primary); }
+.map-tip__meta { display: flex; align-items: center; gap: var(--sp-2); margin-top: 2px; }
+.map-tip__taux { font-family: var(--font-mono); color: var(--text-secondary); }
+.map-tip__classe {
+  text-transform: uppercase; letter-spacing: var(--tracking-caps);
+  font-size: 10px; font-weight: 600;
+}
+.map-tip__classe--normal { color: var(--load-normal); }
+.map-tip__classe--surcharge { color: var(--load-surcharge); }
+.map-tip__classe--critique { color: var(--load-critique); }
+.map-tip__classe--inconnu { color: var(--load-inconnu); }
 
 /* Dark-theme the maplibre chrome to match the console. */
 .ops-map .maplibregl-ctrl-group {

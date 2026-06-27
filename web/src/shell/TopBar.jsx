@@ -1,6 +1,6 @@
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
-import { SearchInput, Button, FilterChip, Tooltip } from '../ui/index.js';
+import { RefreshCw, MapPin } from 'lucide-react';
+import { SearchInput, Button, FilterChip, Tooltip, Badge } from '../ui/index.js';
 import './shell.css';
 
 const FILTERS = [
@@ -8,7 +8,12 @@ const FILTERS = [
   { key: 'surcharge', label: 'Surcharge' },
 ];
 
-export function TopBar({ search, onSearch, activeFilters = {}, onToggleFilter, updatedAt, onRefresh, refreshing }) {
+const RESULT_TYPE_LABEL = { transfo: 'Transfo', poste: 'Poste', ligne: 'Ligne' };
+
+export function TopBar({
+  search, onSearch, searchResults = [], onPickResult,
+  activeFilters = {}, onToggleFilter, updatedAt, onRefresh, refreshing,
+}) {
   return (
     <header className="shell-topbar">
       <div className="shell-wordmark">
@@ -22,6 +27,25 @@ export function TopBar({ search, onSearch, activeFilters = {}, onToggleFilter, u
           onChange={onSearch}
           placeholder="Rechercher un actif, un poste…"
         />
+        {searchResults.length > 0 && (
+          <ul className="shell-search-results" role="listbox">
+            {searchResults.map((r) => (
+              <li key={`${r.type}-${r.id}`}>
+                <button
+                  type="button"
+                  className="shell-search-result"
+                  onClick={() => onPickResult?.(r)}
+                >
+                  <MapPin size={13} className="shell-search-result__icon" />
+                  <span className="shell-search-result__code mono">{r.code || r.label}</span>
+                  <span className="shell-search-result__label">{r.label}</span>
+                  <span className="caps shell-search-result__type">{RESULT_TYPE_LABEL[r.type] || r.type}</span>
+                  {r.classe && <Badge classe={r.classe} />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="shell-topbar__right">
