@@ -1,5 +1,9 @@
 import pg from 'pg';
 
+// Load repo-root .env so `node --test` and runtime connect to the right port.
+// In Docker, env vars are injected directly and no .env file exists -> swallow.
+try { process.loadEnvFile(new URL('../../.env', import.meta.url)); } catch {}
+
 const pool = new pg.Pool({
   host: process.env.POSTGRES_HOST || 'localhost',
   port: Number(process.env.POSTGRES_PORT || 5432),
