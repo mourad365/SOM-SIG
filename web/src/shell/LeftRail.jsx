@@ -12,9 +12,8 @@ const LAYER_DEFS = [
 ];
 
 const BASEMAPS = [
-  { value: 'light', label: 'Clair (vecteur)' },
-  { value: 'dark', label: 'Sombre (vecteur)' },
-  { value: 'satellite', label: 'Satellite (image)' },
+  { value: 'map', label: 'Carte' },
+  { value: 'satellite', label: 'Satellite' },
 ];
 
 const COLOR_MODES = [

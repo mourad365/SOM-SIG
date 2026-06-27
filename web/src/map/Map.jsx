@@ -22,24 +22,13 @@ const MIN_ZOOM = 4;
 const MAX_ZOOM = 22; // raised from MapLibre's effective default; vector tiles overzoom crisply.
 const RECENT_DAYS = 90;
 
-// Vector basemaps (CARTO/OpenMapTiles — carry name:ar / name:latin for relabelling).
-const VECTOR_BASEMAPS = {
-  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-};
-// Satellite imagery (raster) — higher real-world resolution at deep zoom.
-const SATELLITE_STYLE = {
-  version: 8,
-  sources: {
-    sat: {
-      type: 'raster', tileSize: 256, maxzoom: 19,
-      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-      attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
-    },
-  },
-  layers: [{ id: 'sat', type: 'raster', source: 'sat' }],
-};
-const styleForBasemap = (b) => (b === 'satellite' ? SATELLITE_STYLE : (VECTOR_BASEMAPS[b] || VECTOR_BASEMAPS.light));
+// Single standard street basemap (CARTO Voyager — Google-Maps-like, OpenMapTiles
+// schema so it carries name:ar / name:latin for relabelling). Satellite is layered
+// in as a raster ON TOP of this style (below our data) rather than swapping the whole
+// style — so the network layers are added once and never disappear when toggling.
+const STREET_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+const SAT_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+const SAT_ATTRIB = 'Imagery © Esri, Maxar, Earthstar Geographics';
 
 const DEFAULT_LAYERS = { poste: false, transfo: true, ligne: true, point_service: false, support: false };
 
@@ -139,7 +128,7 @@ export default function Map({
   heatmap = false,
   onlyOverloaded = false,
   filters = {},
-  basemap = 'light',
+  basemap = 'map',
   language = 'fr',
   showRecent = false,
   flyTo,
@@ -244,6 +233,16 @@ export default function Map({
     });
 
     const cutoff = recentCutoffISO();
+
+    // Satellite raster — first of OUR layers, so it covers the Voyager basemap
+    // (roads/labels) but sits BELOW every network layer added after it. Toggled
+    // via visibility; never removed, so the data layers above it always render.
+    if (!map.getSource('sat')) {
+      map.addSource('sat', { type: 'raster', tiles: [SAT_TILES], tileSize: 256, maxzoom: 19, attribution: SAT_ATTRIB });
+    }
+    if (!map.getLayer('satellite')) {
+      map.addLayer({ id: 'satellite', type: 'raster', source: 'sat', layout: { visibility: basemap === 'satellite' ? 'visible' : 'none' } });
+    }
 
     // Order: recent ligne casing → lignes → gold flow → heat → dots → markers.
     if (!map.getLayer('ligne-recent')) {
@@ -364,7 +363,7 @@ export default function Map({
     ensureRTLPlugin();
     const map = new maplibregl.Map({
       container: ref.current,
-      style: styleForBasemap(basemap),
+      style: STREET_STYLE,
       center: NOUAKCHOTT.center,
       zoom: NOUAKCHOTT.zoom,
       minZoom: MIN_ZOOM,
@@ -409,6 +408,8 @@ export default function Map({
     if (!map || !loadedRef.current) return;
 
     const setVis = (id, on) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'); };
+    // Basemap: street (Voyager) vs satellite raster overlay.
+    setVis('satellite', basemap === 'satellite');
     setVis('transfo', layers.transfo);
     // Pulse ring follows the transfo layer (but reduced-motion keeps it hidden).
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -450,30 +451,10 @@ export default function Map({
     });
   }
 
-  // Re-apply on control prop changes.
+  // Re-apply on control prop changes (incl. basemap satellite toggle).
   useEffect(() => { applyState(); });
 
-  // Basemap switch: setStyle then re-add sources/layers on style.load.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !loadedRef.current) return;
-    map.setStyle(styleForBasemap(basemap));
-    map.once('style.load', () => {
-      try {
-        addLayers(map);
-        bindInteractions(map);
-        applyLabelLanguage(map, language);
-        startPulse(map);
-        startFlow(map);
-      } catch (err) {
-        console.warn('Map restyle re-add partial:', err);
-      }
-      applyState();
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [basemap]);
-
-  // Language switch on a live vector basemap (no full restyle needed).
+  // Language switch on the live vector basemap.
   useEffect(() => {
     const map = mapRef.current;
     if (map && loadedRef.current) applyLabelLanguage(map, language);

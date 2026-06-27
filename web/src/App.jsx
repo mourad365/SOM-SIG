@@ -25,7 +25,7 @@ export default function App() {
   const [colorBy, setColorBy] = useState('charge');
   const [heatmap, setHeatmap] = useState(false);
   const [onlyOverloaded, setOnlyOverloaded] = useState(false);
-  const [basemap, setBasemap] = useState('light');
+  const [basemap, setBasemap] = useState('map');
   const [language, setLanguage] = useState('fr'); // map label language: 'fr' (latin) | 'ar'
   const [showRecent, setShowRecent] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
