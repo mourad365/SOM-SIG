@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCD - SIG SOMELEC - Réseau électrique</title>
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #ffffff;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 4px;
+  }
+  p.sub {
+    font-size: 13px;
+    color: #555;
+    margin: 0 0 20px;
+  }
+  #erd { overflow-x: auto; }
+  /* Force entity title text + attribute text to be dark and visible */
+  #erd svg .entityLabel,
+  #erd svg .entityLabel * { fill: #1a1a1a !important; }
+  #erd svg text { fill: #1a1a1a !important; }
+  /* Relationship labels */
+  #erd svg .relationshipLabel { fill: #333 !important; }
+  #erd svg .relationshipLabelBox { fill: #ffffff !important; opacity: 0.9 !important; }
+  /* Remove inner row borders, keep outer box + header divider */
+  #erd svg .row-rect-odd path,
+  #erd svg .row-rect-odd rect,
+  #erd svg .row-rect-even path,
+  #erd svg .row-rect-even rect { stroke: none !important; }
+</style>
+</head>
+<body>
+<h1>Modèle conceptuel de données — SIG SOMELEC</h1>
+<p class="sub">Réseau électrique : postes, transformateurs, tronçons, nœuds, organes de coupure, départs, supports, abonnés, points de service. PK = clé primaire, FK = clé étrangère, geom = géométrie PostGIS (SRID 32628).</p>
+<div id="erd"></div>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: 'Arial, Helvetica, sans-serif',
+  themeVariables: {
+    darkMode: false,
+    fontSize: '13px',
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    primaryColor: '#eef0ff',
+    primaryBorderColor: '#7b78d6',
+    primaryTextColor: '#1a1a1a',
+    lineColor: '#666666',
+    textColor: '#1a1a1a',
+    attributeBackgroundColorOdd: '#f7f7fb',
+    attributeBackgroundColorEven: '#eef0f7'
+  }
+});
+
+const def = `erDiagram
+  NIVEAU_TENSION ||--o{ NOEUD : "classe"
+  NIVEAU_TENSION ||--o{ TRONCON : "classe"
+  NIVEAU_TENSION ||--o{ DEPART : "classe"
+  FABRICANT ||--o{ TRANSFO_PUISSANCE : "fabrique"
+  FABRICANT ||--o{ TRANSFO_DISTRIB : "fabrique"
+  STATUT ||--o{ POSTE : "etat"
+  STATUT ||--o{ TRONCON : "etat"
+  STATUT ||--o{ POINT_SERVICE : "etat"
+  POSTE ||--o{ JEU_DE_BARRES : "contient"
+  POSTE ||--o{ TRANSFO_PUISSANCE : "contient"
+  POSTE ||--o{ DEPART : "alimente"
+  POSTE ||--o{ ORGANE_COUPURE : "abrite"
+  DEPART ||--o{ TRONCON : "regroupe"
+  DEPART ||--o{ TRANSFO_DISTRIB : "alimente"
+  TRANSFO_DISTRIB ||--o{ POINT_SERVICE : "dessert"
+  ABONNE ||--o{ POINT_SERVICE : "possede"
+  NOEUD ||--o{ TRONCON : "depart"
+  NOEUD ||--o{ ORGANE_COUPURE : "situe"
+  NOEUD ||--o{ POINT_SERVICE : "raccorde"
+  NOEUD ||--o{ JEU_DE_BARRES : "porte"
+  NIVEAU_TENSION {
+    string code_tension PK
+    string classe
+    string valeur
+    string usage
+  }
+  FABRICANT {
+    int fabricant_id PK
+    string nom
+    string pays
+  }
+  STATUT {
+    int statut_id PK
+    string libelle
+  }
+  POSTE {
+    int poste_id PK
+    string code_poste
+    string nom
+    string type_poste
+    string tension_amont FK
+    string tension_aval FK
+    string wilaya
+    date date_mise_service
+    int statut_id FK
+    geometry geom
+  }
+  JEU_DE_BARRES {
+    int jdb_id PK
+    int poste_id FK
+    string code_tension FK
+    int noeud_id FK
+    geometry geom
+  }
+  TRANSFO_PUISSANCE {
+    int transfo_id PK
+    string code_actif
+    int poste_id FK
+    string tension_prim FK
+    string tension_sec FK
+    numeric puissance_mva
+    int fabricant_id FK
+    int annee_fab
+    date date_mise_service
+    string etat
+    int noeud_ht FK
+    int noeud_mt FK
+    geometry geom
+  }
+  TRANSFO_DISTRIB {
+    int transfo_id PK
+    string code_actif
+    int depart_id FK
+    numeric puissance_kva
+    string tension_prim
+    string tension_sec
+    string type_montage
+    int fabricant_id FK
+    date date_mise_service
+    string etat
+    int noeud_mt FK
+    int noeud_bt FK
+    geometry geom
+  }
+  DEPART {
+    int depart_id PK
+    string code_depart
+    string nom
+    int poste_source FK
+    string code_tension FK
+    int noeud_source FK
+  }
+  TRONCON {
+    int troncon_id PK
+    string code_actif
+    string code_tension FK
+    string type_pose
+    string materiau
+    numeric section_mm2
+    numeric longueur_m
+    int depart_id FK
+    int noeud_source FK
+    int noeud_arrivee FK
+    int statut_id FK
+    date date_mise_service
+    geometry geom
+  }
+  ORGANE_COUPURE {
+    int organe_id PK
+    string code_actif
+    string type_organe
+    string code_tension FK
+    string etat_normal
+    int noeud_id FK
+    int poste_id FK
+    geometry geom
+  }
+  SUPPORT {
+    int support_id PK
+    string code_actif
+    string type_support
+    numeric hauteur_m
+    string code_tension
+    string etat
+    date date_mise_service
+    geometry geom
+  }
+  ABONNE {
+    int abonne_id PK
+    string num_contrat
+    string nom
+    string centre_commercial
+    string type_tarif
+    string wilaya
+  }
+  POINT_SERVICE {
+    int point_id PK
+    uuid uuid
+    string num_compteur
+    int abonne_id FK
+    int transfo_bt_id FK
+    int noeud_id FK
+    string type_compteur
+    numeric puiss_souscrite_kw
+    date date_pose
+    int statut_id FK
+    geometry geom
+  }`;
+
+const { svg } = await mermaid.render('erd-svg', def);
+document.getElementById('erd').innerHTML = svg;
+
+// Round outer entity box corners
+document.querySelectorAll('#erd svg .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+</script>
+</body>
+</html>
