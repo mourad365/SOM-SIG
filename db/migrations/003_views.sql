@@ -23,7 +23,8 @@ SELECT
     WHEN (c.kw * (SELECT valeur FROM f) / (SELECT valeur FROM p)) / t.puissance_kva >= (SELECT valeur FROM sc) THEN 'critique'
     WHEN (c.kw * (SELECT valeur FROM f) / (SELECT valeur FROM p)) / t.puissance_kva >= (SELECT valeur FROM sa) THEN 'surcharge'
     ELSE 'normal'
-  END AS classe
+  END AS classe,
+  t.date_mise_service
 FROM transformateur t
 JOIN charge c ON c.transfo_id = t.transfo_id;
 
@@ -44,7 +45,8 @@ SELECT
     WHEN (ct.charge_kva / (sqrt(3) * nt.valeur::numeric * (SELECT valeur FROM p))) / ac.capacite_a >= (SELECT valeur FROM sc) THEN 'critique'
     WHEN (ct.charge_kva / (sqrt(3) * nt.valeur::numeric * (SELECT valeur FROM p))) / ac.capacite_a >= (SELECT valeur FROM sa) THEN 'surcharge'
     ELSE 'normal'
-  END AS classe
+  END AS classe,
+  l.date_mise_service
 FROM ligne l
 LEFT JOIN niveau_tension nt ON nt.code_tension = l.niveau_tension
 LEFT JOIN ampacite_cable ac ON ac.section_mm2 = l.section_mm2 AND ac.type_pose = l.type_pose

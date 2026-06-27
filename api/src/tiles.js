@@ -4,10 +4,10 @@ import { query } from './db.js';
 // Whitelisted layers -> source relation (view or base table) + exposed columns.
 // `geomCol` defaults to 'geom'; any whitelisted point/line relation works the same way.
 const LAYERS = {
-  transfo:       { rel: 'v_charge_transformateur', cols: 'transfo_id, code_actif, taux_charge, classe, puissance_kva' },
-  ligne:         { rel: 'v_charge_ligne',          cols: 'ligne_id, code_actif, taux_charge, classe, section_mm2' },
-  poste:         { rel: 'poste',                   cols: 'poste_id, code_poste, nom, type_poste, statut' },
-  point_service: { rel: 'point_service',           cols: 'point_id, num_compteur, statut' },
+  transfo:       { rel: 'v_charge_transformateur', cols: 'transfo_id, code_actif, taux_charge, classe, puissance_kva, date_mise_service::text AS date_mise_service' },
+  ligne:         { rel: 'v_charge_ligne',          cols: 'ligne_id, code_actif, taux_charge, classe, section_mm2, date_mise_service::text AS date_mise_service' },
+  poste:         { rel: 'poste',                   cols: 'poste_id, code_poste, nom, type_poste, statut, date_mise_service::text AS date_mise_service' },
+  point_service: { rel: 'point_service',           cols: 'point_id, num_compteur, statut, date_pose::text AS date_mise_service' },
   support:       { rel: 'support',                 cols: 'support_id, code_actif, type_support, etat' },
 };
 
