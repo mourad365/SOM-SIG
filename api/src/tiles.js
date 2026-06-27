@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import { query } from './db.js';
 
-// Whitelisted layers -> source view + columns exposed in the tile.
+// Whitelisted layers -> source relation (view or base table) + exposed columns.
+// `geomCol` defaults to 'geom'; any whitelisted point/line relation works the same way.
 const LAYERS = {
-  transfo: { view: 'v_charge_transformateur', cols: 'transfo_id, code_actif, taux_charge, classe, puissance_kva' },
-  ligne:   { view: 'v_charge_ligne',          cols: 'ligne_id, code_actif, taux_charge, classe, section_mm2' },
+  transfo:       { rel: 'v_charge_transformateur', cols: 'transfo_id, code_actif, taux_charge, classe, puissance_kva' },
+  ligne:         { rel: 'v_charge_ligne',          cols: 'ligne_id, code_actif, taux_charge, classe, section_mm2' },
+  poste:         { rel: 'poste',                   cols: 'poste_id, code_poste, nom, type_poste, statut' },
+  point_service: { rel: 'point_service',           cols: 'point_id, num_compteur, statut' },
+  support:       { rel: 'support',                 cols: 'support_id, code_actif, type_support, etat' },
 };
 
 export const tilesRouter = Router();
@@ -12,19 +16,21 @@ export const tilesRouter = Router();
 tilesRouter.get('/:layer/:z/:x/:y.pbf', async (req, res) => {
   const layer = LAYERS[req.params.layer];
   if (!layer) return res.status(400).json({ error: 'unknown layer' });
+  const geomCol = layer.geomCol || 'geom';
 
   const z = Number(req.params.z), x = Number(req.params.x), y = Number(req.params.y);
   if (![z, x, y].every(Number.isInteger)) return res.status(400).json({ error: 'bad tile coords' });
 
-  // Reproject 32628 -> 3857 web-mercator tile envelope; parameterized, no SQL injection.
+  // Reproject 32628 -> 3857 web-mercator tile envelope; cols/rel come only from the
+  // server-side whitelist above (never user input), tile coords + layer name are bound.
   const sql = `
     WITH bounds AS (SELECT ST_TileEnvelope($1,$2,$3) AS env),
     mvt AS (
       SELECT ${layer.cols},
-             ST_AsMVTGeom(ST_Transform(t.geom, 3857), bounds.env, 4096, 64, true) AS geom
-      FROM ${layer.view} t, bounds
-      WHERE t.geom IS NOT NULL
-        AND ST_Intersects(ST_Transform(t.geom, 3857), bounds.env)
+             ST_AsMVTGeom(ST_Transform(t.${geomCol}, 3857), bounds.env, 4096, 64, true) AS geom
+      FROM ${layer.rel} t, bounds
+      WHERE t.${geomCol} IS NOT NULL
+        AND ST_Intersects(ST_Transform(t.${geomCol}, 3857), bounds.env)
     )
     SELECT ST_AsMVT(mvt, $4, 4096, 'geom') AS tile FROM mvt WHERE geom IS NOT NULL;`;
   try {
