@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
 import { Crosshair } from 'lucide-react';
 import { Drawer, Gauge, Stat, Badge, Button, Spinner, EmptyState } from '../ui/index.js';
 import { getAsset } from '../api.js';
@@ -41,12 +43,25 @@ export function Inspector({ feature, open, onClose, onFlyTo }) {
   const taux = d.taux_charge == null ? null : Number(d.taux_charge);
   const code = d.code_actif || d.code_poste || d.code || d.num_compteur || '—';
 
+  const contentRef = useRef(null);
+
+  // Fade/slide the inspector content children in when it opens for a feature.
+  // Reduced-motion -> visible immediately. CSS still handles the drawer slide.
+  useGSAP(() => {
+    if (!open || !feature) return;
+    const kids = contentRef.current?.children;
+    if (!kids?.length) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { gsap.set(kids, { opacity: 1, y: 0 }); return; }
+    gsap.from(kids, { y: 12, opacity: 0, duration: 0.4, ease: 'power2.out', stagger: 0.06 });
+  }, { scope: contentRef, dependencies: [open, feature, type] });
+
   return (
     <Drawer open={open} onClose={onClose} title="Inspecteur d'actif">
       {!feature ? (
         <EmptyState message="Sélectionnez un actif sur la carte" />
       ) : (
-        <>
+        <div ref={contentRef}>
           <div className="inspector-head">
             <span className="inspector-code">{code}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
@@ -99,7 +114,7 @@ export function Inspector({ feature, open, onClose, onFlyTo }) {
               <Crosshair size={14} /> Centrer
             </Button>
           </div>
-        </>
+        </div>
       )}
     </Drawer>
   );

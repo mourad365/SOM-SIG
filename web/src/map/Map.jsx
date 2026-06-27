@@ -7,6 +7,7 @@ import {
   transfoCirclePaint, ligneLinePaint, posteCirclePaint,
   pointServiceCirclePaint, supportCirclePaint,
   voltageColorExpr, surchargeHeatmapPaint, OVERLOADED_FILTER,
+  transfoCritiquePulsePaint, CRITIQUE_FILTER,
 } from './style.js';
 import { classeColorExpr } from '../theme/tokens.js';
 import { MapLegend } from './MapLegend.jsx';
@@ -58,9 +59,33 @@ export default function Map({
   const mapRef = useRef(null);
   const loadedRef = useRef(false);
   const popupRef = useRef(null);
+  const pulseRafRef = useRef(null);
   // Latest props for event handlers bound once.
   const onSelectRef = useRef(onSelectFeature);
   onSelectRef.current = onSelectFeature;
+
+  // Animate the critique pulse ring (radius 10->26, opacity 0.5->0 over ~1.6s,
+  // looped) via requestAnimationFrame. Skipped under reduced-motion.
+  function startPulse(map) {
+    if (pulseRafRef.current) cancelAnimationFrame(pulseRafRef.current);
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+      if (map.getLayer('transfo-critique-pulse')) {
+        map.setLayoutProperty('transfo-critique-pulse', 'visibility', 'none');
+      }
+      return;
+    }
+    const PERIOD = 1600;
+    const start = performance.now();
+    const tick = (now) => {
+      if (!map.getLayer('transfo-critique-pulse')) { pulseRafRef.current = null; return; }
+      const t = ((now - start) % PERIOD) / PERIOD; // 0..1
+      map.setPaintProperty('transfo-critique-pulse', 'circle-radius', 10 + t * 16);
+      map.setPaintProperty('transfo-critique-pulse', 'circle-opacity', 0.5 * (1 - t));
+      pulseRafRef.current = requestAnimationFrame(tick);
+    };
+    pulseRafRef.current = requestAnimationFrame(tick);
+  }
 
   // Add all sources + layers. Reused on initial load AND after setStyle (basemap switch).
   function addLayers(map) {
@@ -94,6 +119,13 @@ export default function Map({
       map.addLayer({
         id: 'support', type: 'circle', source: 'support', 'source-layer': 'support',
         minzoom: 14, paint: supportCirclePaint,
+      });
+    }
+    // Pulse ring sits directly UNDER the solid transfo marker so the dot stays on top.
+    if (!map.getLayer('transfo-critique-pulse')) {
+      map.addLayer({
+        id: 'transfo-critique-pulse', type: 'circle', source: 'transfo', 'source-layer': 'transfo',
+        filter: CRITIQUE_FILTER, paint: transfoCritiquePulsePaint,
       });
     }
     if (!map.getLayer('transfo')) {
@@ -156,6 +188,7 @@ export default function Map({
       try {
         addLayers(map);
         bindInteractions(map);
+        startPulse(map);
       } catch (err) {
         console.warn('Map layer init partial:', err);
       }
@@ -163,7 +196,12 @@ export default function Map({
       applyState();
     });
 
-    return () => { loadedRef.current = false; popupRef.current?.remove(); map.remove(); };
+    return () => {
+      loadedRef.current = false;
+      if (pulseRafRef.current) cancelAnimationFrame(pulseRafRef.current);
+      popupRef.current?.remove();
+      map.remove();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -174,6 +212,9 @@ export default function Map({
 
     const setVis = (id, on) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'); };
     setVis('transfo', layers.transfo);
+    // Pulse ring follows the transfo layer (but reduced-motion keeps it hidden).
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setVis('transfo-critique-pulse', layers.transfo && !reduce);
     setVis('ligne', layers.ligne);
     setVis('poste', layers.poste);
     setVis('point_service', layers.point_service);
@@ -217,6 +258,7 @@ export default function Map({
       try {
         addLayers(map);
         bindInteractions(map);
+        startPulse(map);
       } catch (err) {
         console.warn('Map restyle re-add partial:', err);
       }

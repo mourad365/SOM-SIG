@@ -77,6 +77,19 @@ export const surchargeHeatmapPaint = {
   ],
 };
 
+// ---- Critique pulse ring (animated via rAF in Map.jsx) ----
+// A soft expanding ring under the solid transfo marker. Radius/opacity are
+// driven imperatively; these are just the static base paint props.
+export const transfoCritiquePulsePaint = {
+  'circle-color': LOAD.critique,
+  'circle-radius': 10,
+  'circle-opacity': 0,
+  'circle-stroke-width': 0,
+};
+
+// Filter: only critique transformers get the pulse.
+export const CRITIQUE_FILTER = ['==', ['get', 'classe'], 'critique'];
+
 // Filter: show only surcharge + critique when enabled.
 export const OVERLOADED_FILTER = ['in', ['get', 'classe'], ['literal', OVERLOADED_CLASSES]];
 

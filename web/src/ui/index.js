@@ -3,6 +3,7 @@ export { Button } from './Button.jsx';
 export { Badge } from './Badge.jsx';
 export { Stat } from './Stat.jsx';
 export { Gauge } from './Gauge.jsx';
+export { CountUpValue } from './CountUpValue.jsx';
 export { Table } from './Table.jsx';
 export { Chip, FilterChip } from './Chip.jsx';
 export { Toggle, Switch } from './Toggle.jsx';

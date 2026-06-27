@@ -22,8 +22,14 @@
 .dash-tip .caps { color: var(--text-secondary); }
 .dash-tip .mono { color: var(--text-primary); font-size: var(--fs-md); }
 
-/* Alerts — critique rows get a left signal stripe (gsap pulse later) */
+/* Alerts — critique rows get a left signal stripe + a pulsing status dot */
 .alert-critique td:first-child { box-shadow: inset 2px 0 0 var(--load-critique); }
+.alert-type { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.alert-dot {
+  width: 7px; height: 7px; border-radius: var(--r-full);
+  background: var(--load-critique); flex: none;
+  box-shadow: 0 0 0 3px var(--load-critique-soft);
+}
 
 /* Assets table */
 .dash-assets__filters {

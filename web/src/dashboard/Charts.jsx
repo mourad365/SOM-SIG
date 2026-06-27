@@ -63,7 +63,7 @@ export default function Charts({ histogramme = [], alertes = [], stats }) {
               <XAxis dataKey="bin" tick={chartAxis} axisLine={{ stroke: COLOR.grid }} tickLine={false} />
               <YAxis allowDecimals={false} tick={chartAxis} axisLine={false} tickLine={false} width={28} />
               <Tooltip content={<ChartTip />} cursor={{ fill: COLOR.grid }} />
-              <Bar dataKey="n" radius={[3, 3, 0, 0]}>
+              <Bar dataKey="n" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600}>
                 {histo.map((d) => <Cell key={d.bin} fill={d.fill} />)}
               </Bar>
             </BarChart>
@@ -85,7 +85,7 @@ export default function Charts({ histogramme = [], alertes = [], stats }) {
                 width={78}
               />
               <Tooltip content={<ChartTip />} cursor={{ fill: COLOR.grid }} />
-              <Bar dataKey="pct" radius={[0, 3, 3, 0]} barSize={12}>
+              <Bar dataKey="pct" radius={[0, 3, 3, 0]} barSize={12} isAnimationActive animationDuration={600}>
                 {top.map((d) => <Cell key={d.code} fill={d.fill} />)}
                 <LabelList dataKey="pct" position="right" formatter={(v) => `${v}%`} fill={COLOR.textSecondary} fontSize={11} />
               </Bar>
@@ -101,7 +101,7 @@ export default function Charts({ histogramme = [], alertes = [], stats }) {
               <XAxis dataKey="label" tick={{ ...chartAxis, fontSize: 10 }} axisLine={{ stroke: COLOR.grid }} tickLine={false} interval={0} />
               <YAxis allowDecimals={false} tick={chartAxis} axisLine={false} tickLine={false} width={28} />
               <Tooltip content={<ChartTip />} cursor={{ fill: COLOR.grid }} />
-              <Bar dataKey="n" radius={[3, 3, 0, 0]} fill={COLOR.accent} />
+              <Bar dataKey="n" radius={[3, 3, 0, 0]} fill={COLOR.accent} isAnimationActive animationDuration={600} />
             </BarChart>
           </ResponsiveContainer>
         </div>

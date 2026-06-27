@@ -1,11 +1,24 @@
-import React from 'react';
-import { Stat } from '../ui/index.js';
+import React, { useRef } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { Stat, CountUpValue } from '../ui/index.js';
 import { LOAD } from '../theme/tokens.js';
 
-const fmt = (n) => (n == null ? '—' : new Intl.NumberFormat('fr-FR').format(n));
+const frInt = (n) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
 
-// stats: /api/stats payload. Renders 6 KPI tiles. Values carry .kpi-value for gsap.
+// stats: /api/stats payload. Renders 6 KPI tiles. Numeric values count-up on
+// change via CountUpValue; the tile row staggers in on mount.
 export default function KpiStrip({ stats, loading = false }) {
+  const ref = useRef(null);
+
+  useGSAP(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tiles = ref.current?.querySelectorAll('.kpi-value');
+    if (!tiles?.length) return;
+    if (reduce) { gsap.set(tiles, { opacity: 1, y: 0 }); return; }
+    gsap.from(tiles, { y: 12, opacity: 0, duration: 0.4, ease: 'power2.out', stagger: 0.06 });
+  }, { scope: ref });
+
   const c = stats?.counts_by_type || {};
   const t = stats?.transfo_by_classe || {};
   const l = stats?.ligne_by_classe || {};
@@ -14,13 +27,16 @@ export default function KpiStrip({ stats, loading = false }) {
   const surcharge = (Number(t.surcharge) || 0) + (Number(l.surcharge) || 0);
   const health = stats?.network_health_pct;
   const charge = stats?.charge_totale_kva;
+  const postes = Number(c.poste) || 0;
 
-  // className `kpi-value` on each tile lets a later gsap phase target the values.
+  // numeric value -> count-up; null -> "—". `loading` forces the placeholder.
+  const countVal = (n, fmt) => (loading || n == null ? '—' : <CountUpValue value={Number(n)} format={fmt} />);
+
   const tile = (label, value, opts = {}) => (
     <Stat
       className="kpi-value"
       label={label}
-      value={loading ? '—' : value}
+      value={value}
       unit={opts.unit}
       valueColor={opts.color}
       hero={opts.hero}
@@ -28,13 +44,13 @@ export default function KpiStrip({ stats, loading = false }) {
   );
 
   return (
-    <section className="dash-kpis">
-      {tile('Total actifs', fmt(totalActifs), { hero: true })}
-      {tile('Critique', loading ? '—' : critique, { color: LOAD.critique })}
-      {tile('Surcharge', loading ? '—' : surcharge, { color: LOAD.surcharge })}
-      {tile('Réseau sain', loading || health == null ? '—' : `${health}`, { unit: '%', color: LOAD.normal })}
-      {tile('Charge totale', charge == null ? '—' : fmt(Math.round(charge)), { unit: 'kVA' })}
-      {tile('Postes', loading ? '—' : (Number(c.poste) || 0))}
+    <section className="dash-kpis" ref={ref}>
+      {tile('Total actifs', countVal(totalActifs, frInt), { hero: true })}
+      {tile('Critique', countVal(critique), { color: LOAD.critique })}
+      {tile('Surcharge', countVal(surcharge), { color: LOAD.surcharge })}
+      {tile('Réseau sain', countVal(health), { unit: '%', color: LOAD.normal })}
+      {tile('Charge totale', countVal(charge, frInt), { unit: 'kVA' })}
+      {tile('Postes', countVal(postes))}
     </section>
   );
 }
