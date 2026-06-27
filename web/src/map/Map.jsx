@@ -8,6 +8,7 @@ import {
   pointServiceCirclePaint, supportCirclePaint,
   voltageColorExpr, surchargeHeatmapPaint, OVERLOADED_FILTER,
   transfoCritiquePulsePaint, CRITIQUE_FILTER,
+  ligneFlowPaint, LIGNE_FLOW_FRAMES,
 } from './style.js';
 import { classeColorExpr } from '../theme/tokens.js';
 import { MapLegend } from './MapLegend.jsx';
@@ -51,7 +52,7 @@ export default function Map({
   heatmap = false,
   onlyOverloaded = false,
   filters = {},
-  basemap = 'dark',
+  basemap = 'light',
   flyTo,
   onSelectFeature,
 }) {
@@ -60,6 +61,7 @@ export default function Map({
   const loadedRef = useRef(false);
   const popupRef = useRef(null);
   const pulseRafRef = useRef(null);
+  const flowRafRef = useRef(null);
   // Latest props for event handlers bound once.
   const onSelectRef = useRef(onSelectFeature);
   onSelectRef.current = onSelectFeature;
@@ -91,6 +93,31 @@ export default function Map({
     pulseRafRef.current = requestAnimationFrame(tick);
   }
 
+  // Signature electricity current-flow: ant-march the gold `ligne-flow` overlay
+  // by cycling line-dasharray frames at ~12fps so gold dashes travel along lines.
+  // Skipped (static dashes) under reduced-motion; idles while the ligne layer is hidden.
+  function startFlow(map) {
+    if (flowRafRef.current) cancelAnimationFrame(flowRafRef.current);
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return; // keep the static gold dashes from ligneFlowPaint
+    const FRAME_MS = 90; // ~11fps — deliberately throttled, not 60fps
+    let i = 0;
+    let last = 0;
+    const tick = (now) => {
+      if (!map.getLayer('ligne-flow')) { flowRafRef.current = null; return; }
+      if (now - last >= FRAME_MS) {
+        last = now;
+        // Skip paint churn while the flow layer is hidden (ligne toggled off).
+        if (map.getLayoutProperty('ligne-flow', 'visibility') !== 'none') {
+          i = (i + 1) % LIGNE_FLOW_FRAMES.length;
+          map.setPaintProperty('ligne-flow', 'line-dasharray', LIGNE_FLOW_FRAMES[i]);
+        }
+      }
+      flowRafRef.current = requestAnimationFrame(tick);
+    };
+    flowRafRef.current = requestAnimationFrame(tick);
+  }
+
   // Add all sources + layers. Reused on initial load AND after setStyle (basemap switch).
   function addLayers(map) {
     SOURCES.forEach((s) => {
@@ -106,6 +133,10 @@ export default function Map({
     // Order: lines under circles; small dots/squares high-zoom; poste on top.
     if (!map.getLayer('ligne')) {
       map.addLayer({ id: 'ligne', type: 'line', source: 'ligne', 'source-layer': 'ligne', paint: ligneLinePaint });
+    }
+    // Gold current-flow overlay sits directly above the base ligne line.
+    if (!map.getLayer('ligne-flow')) {
+      map.addLayer({ id: 'ligne-flow', type: 'line', source: 'ligne', 'source-layer': 'ligne', paint: ligneFlowPaint });
     }
     if (!map.getLayer('transfo-heat')) {
       map.addLayer({
@@ -179,7 +210,7 @@ export default function Map({
   useEffect(() => {
     const map = new maplibregl.Map({
       container: ref.current,
-      style: BASEMAPS[basemap] || BASEMAPS.dark,
+      style: BASEMAPS[basemap] || BASEMAPS.light,
       center: NOUAKCHOTT.center,
       zoom: NOUAKCHOTT.zoom,
       attributionControl: { compact: true },
@@ -193,6 +224,7 @@ export default function Map({
         addLayers(map);
         bindInteractions(map);
         startPulse(map);
+        startFlow(map);
       } catch (err) {
         console.warn('Map layer init partial:', err);
       }
@@ -203,6 +235,7 @@ export default function Map({
     return () => {
       loadedRef.current = false;
       if (pulseRafRef.current) cancelAnimationFrame(pulseRafRef.current);
+      if (flowRafRef.current) cancelAnimationFrame(flowRafRef.current);
       popupRef.current?.remove();
       map.remove();
     };
@@ -220,6 +253,8 @@ export default function Map({
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setVis('transfo-critique-pulse', layers.transfo && !reduce);
     setVis('ligne', layers.ligne);
+    // Flow overlay follows the ligne layer.
+    setVis('ligne-flow', layers.ligne);
     setVis('poste', layers.poste);
     setVis('point_service', layers.point_service);
     setVis('support', layers.support);
@@ -256,13 +291,14 @@ export default function Map({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !loadedRef.current) return;
-    const target = BASEMAPS[basemap] || BASEMAPS.dark;
+    const target = BASEMAPS[basemap] || BASEMAPS.light;
     map.setStyle(target);
     map.once('style.load', () => {
       try {
         addLayers(map);
         bindInteractions(map);
         startPulse(map);
+        startFlow(map);
       } catch (err) {
         console.warn('Map restyle re-add partial:', err);
       }

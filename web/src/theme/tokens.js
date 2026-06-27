@@ -1,11 +1,11 @@
 // SIG SOMELEC design tokens for JS consumers (MapLibre paint, Recharts, gauges).
-// Mirrors web/src/theme/tokens.css. Keep in sync. Color = signal.
+// Mirrors web/src/theme/tokens.css — LIGHT, brand-aligned. Color = signal.
 
 export const LOAD = {
-  normal:    '#2BB673',
-  surcharge: '#F5A524',
-  critique:  '#F0453A',
-  inconnu:   '#5A6473',
+  normal:    '#16A34A',
+  surcharge: '#E0820C',
+  critique:  '#DC2626',
+  inconnu:   '#94A3B8',
 };
 
 export const LOAD_LABEL = {
@@ -15,23 +15,32 @@ export const LOAD_LABEL = {
   inconnu:   'Inconnu',
 };
 
-export const COLOR = {
-  bgBase: '#0B0E14',
-  bgSurface: '#131722',
-  bgSurface2: '#1C212E',
-  border: 'rgba(255,255,255,0.12)',
-  textPrimary: '#E6E9EF',
-  textSecondary: '#9AA4B2',
-  textMuted: '#687185',
-  accent: '#38BDF8',
-  grid: 'rgba(255,255,255,0.06)',
+// SOMELEC brand. blue = interactive/chrome; gold (energy) = electricity motif only.
+export const BRAND = {
+  blue: '#0E5BA6',
+  blueDeep: '#0A4682',
+  gold: '#F4B400',
+  goldDeep: '#D99A00',
 };
 
-// Voltage-level palette (used for "color by voltage" mode + line dash). Neutral-cool, NOT load colors.
+export const COLOR = {
+  bgBase: '#F4F7FB',
+  bgSurface: '#FFFFFF',
+  bgSurface2: '#EEF3F9',
+  border: 'rgba(16,33,61,0.12)',
+  textPrimary: '#14223A',
+  textSecondary: '#4A5A72',
+  textMuted: '#8493A7',
+  accent: '#0E5BA6',
+  energy: '#F4B400',
+  grid: 'rgba(16,33,61,0.07)',
+};
+
+// Voltage-level palette (cool, readable on white). NOT load colors.
 export const VOLTAGE = {
-  HTA33: '#7CA9D6',
-  HTA15: '#56D0C9',
-  BT:    '#B8C2D0',
+  HTA33: '#1D5FA8',
+  HTA15: '#1AA0A0',
+  BT:    '#7C8AA0',
 };
 
 // MapLibre data-driven expressions ------------------------------------------------

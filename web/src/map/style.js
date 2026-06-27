@@ -1,5 +1,5 @@
 // Map paint expressions — token-driven (see theme/tokens.js). Color = load signal only.
-import { classeColorExpr, OVERLOADED_CLASSES, VOLTAGE, LOAD, COLOR } from '../theme/tokens.js';
+import { classeColorExpr, OVERLOADED_CLASSES, VOLTAGE, LOAD, COLOR, BRAND } from '../theme/tokens.js';
 
 export const CLASSE_COLOR = classeColorExpr;
 
@@ -27,6 +27,25 @@ export const ligneLinePaint = {
   'line-width': ['match', ['get', 'classe'], 'critique', 5, 'surcharge', 3.5, 2],
   'line-opacity': 0.8,
 };
+
+// ---- Ligne current-flow overlay (signature electricity motif) ----
+// A thin gold dashed line drawn above the base `ligne`. The dash offset is
+// cycled imperatively (ant-march) in Map.jsx to make current appear to flow.
+// Gold = energy/electricity accent ONLY (see tokens). Base dasharray below is
+// the reduced-motion / initial frame; the rAF loop swaps frames.
+export const ligneFlowPaint = {
+  'line-color': BRAND.gold,
+  'line-width': 2,
+  'line-opacity': 0.9,
+  'line-dasharray': [0, 4, 3],
+};
+
+// Dash-offset frames for the flowing-current ant-march (~12fps). Each frame keeps
+// the same dash:gap total but shifts the leading transparent gap so the gold
+// dashes appear to travel forward along the line.
+export const LIGNE_FLOW_FRAMES = [
+  [0, 4, 3], [1, 4, 2], [2, 4, 1], [3, 4, 0],
+];
 
 // ---- Poste (larger ringed circles) ----
 export const posteCirclePaint = {

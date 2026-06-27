@@ -1,13 +1,19 @@
 # SIG SOMELEC — Design System: "Centre de conduite réseau"
 
-Dark technical **operations console**, map-as-hero. This doc is the shared contract for all
+**LIGHT, SOMELEC-brand operations console**, map-as-hero. This doc is the shared contract for all
 implementation agents. Tokens: `web/src/theme/tokens.css` (CSS vars) + `web/src/theme/tokens.js` (JS).
 
+> **Theme: LIGHT + SOMELEC brand.** Cool-light canvas (`#F4F7FB`), white surfaces, deep-navy text.
+> Brand primary = SOMELEC blue `#0E5BA6` (all interactive/chrome). Gold `#F4B400` = **electricity
+> motif only** (signature current-flow animation on lines + the wordmark bolt mark). Default basemap
+> is light **Carto Positron** (dark Dark-Matter still available via the basemap switch). Signature
+> detail: an animated gold **current-flow** ant-march travelling along the network lines.
+
 ## Reference lock (refero-design)
-- **Primary:** dark observability console (Grafana/Datadog density) × Linear precision, map-as-hero (Electricity Maps / Felt).
-- **Preserve:** deep neutral graphite canvas (NOT indigo/blue), full-bleed map with floating chrome, compact density, monospace numeric readouts, 1px borders, near-sharp radius (4–6px).
-- **Role rules (hard):** green/amber/red = **load-state signal only**; cyan `#38BDF8` = **interactive only** (focus/active/links). Never repurpose.
-- **Reject:** indigo/violet, cards-as-default, decorative side stripes, emoji icons, averaged pastels, fake imagery.
+- **Primary:** light observability console (Grafana/Datadog density) × Linear precision, map-as-hero (Electricity Maps / Felt), SOMELEC institutional brand.
+- **Preserve:** cool-light canvas, full-bleed map with floating chrome, compact density, monospace numeric readouts, 1px borders, near-sharp radius (4–6px).
+- **Role rules (hard):** green/amber/red = **load-state signal only**; SOMELEC blue `#0E5BA6` = **interactive only** (focus/active/links/chrome); gold `#F4B400` = **electricity motif only** (current-flow + wordmark mark). Never repurpose.
+- **Reject:** indigo/violet, gold-as-general-chrome, cards-as-default, decorative side stripes, emoji icons, averaged pastels, fake imagery.
 
 ## Typography
 - UI: **Inter**. Numeric data (KPI numbers, codes, %, coords, kVA): **JetBrains Mono**, `font-variant-numeric: tabular-nums` (use `.mono`/`.tnum`).
@@ -15,9 +21,11 @@ implementation agents. Tokens: `web/src/theme/tokens.css` (CSS vars) + `web/src/
 - Hierarchy: KPI hero (mono 28px) › panel title (20) › section (16) › base (14) › secondary (13/12) › caps label (11).
 
 ## Color (see tokens)
-- Canvas `--bg-base #0B0E14`; panels `--bg-surface #131722`; raised `--bg-surface-2`.
-- Text primary `#E6E9EF`, secondary `#9AA4B2`, muted `#687185`.
-- Load: normal `#2BB673`, surcharge `#F5A524`, critique `#F0453A`, inconnu `#5A6473`.
+- Canvas `--bg-base #F4F7FB`; panels `--bg-surface #FFFFFF`; raised `--bg-surface-2 #EEF3F9`.
+- Text primary `#14223A`, secondary `#4A5A72`, muted `#8493A7`.
+- Brand/interactive: SOMELEC blue `--brand`/`--accent` `#0E5BA6` (active tab, toggles ON, focus, links, selection).
+- Energy/electricity: gold `--energy` `#F4B400` — current-flow animation + wordmark bolt **only**.
+- Load: normal `#16A34A`, surcharge `#E0820C`, critique `#DC2626`, inconnu `#94A3B8` (tuned for white).
 - Voltage palette (cool neutrals, for "color by voltage" mode only) in tokens.js `VOLTAGE`.
 
 ## Layout — app shell

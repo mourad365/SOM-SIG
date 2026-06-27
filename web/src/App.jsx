@@ -21,7 +21,7 @@ export default function App() {
   const [colorBy, setColorBy] = useState('charge');
   const [heatmap, setHeatmap] = useState(false);
   const [onlyOverloaded, setOnlyOverloaded] = useState(false);
-  const [basemap, setBasemap] = useState('dark');
+  const [basemap, setBasemap] = useState('light');
   const [railCollapsed, setRailCollapsed] = useState(false);
 
   // Shell chrome state.

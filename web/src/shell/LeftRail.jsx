@@ -12,8 +12,8 @@ const LAYER_DEFS = [
 ];
 
 const BASEMAPS = [
+  { value: 'light', label: 'Clair (vecteur)' },
   { value: 'dark', label: 'Sombre (vecteur)' },
-  { value: 'satellite', label: 'Satellite (à venir)' },
 ];
 
 const COLOR_MODES = [

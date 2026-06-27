@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, MapPin } from 'lucide-react';
+import { RefreshCw, MapPin, Zap } from 'lucide-react';
 import { SearchInput, Button, FilterChip, Tooltip, Badge } from '../ui/index.js';
 import './shell.css';
 
@@ -17,6 +17,7 @@ export function TopBar({
   return (
     <header className="shell-topbar">
       <div className="shell-wordmark">
+        <Zap size={18} className="shell-wordmark__bolt" aria-hidden="true" />
         <span className="shell-wordmark__mark">SOMELEC</span>
         <span className="shell-wordmark__sub caps">Centre de conduite réseau</span>
       </div>

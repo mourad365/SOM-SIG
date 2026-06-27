@@ -19,8 +19,9 @@
   border-bottom: 1px solid var(--border);
   z-index: var(--z-chrome);
 }
-.shell-wordmark { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
-.shell-wordmark__mark { font-weight: 700; font-size: var(--fs-md); letter-spacing: 0.04em; color: var(--text-primary); }
+.shell-wordmark { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.shell-wordmark__bolt { color: var(--energy); flex: none; filter: drop-shadow(0 1px 1px var(--energy-soft)); }
+.shell-wordmark__mark { font-weight: 700; font-size: var(--fs-md); letter-spacing: 0.04em; color: var(--brand); margin-right: var(--sp-2); }
 .shell-wordmark__sub { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .shell-topbar__search { position: relative; display: flex; justify-content: center; }
 
