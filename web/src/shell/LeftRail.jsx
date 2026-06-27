@@ -1,5 +1,5 @@
 import React from 'react';
-import { PanelLeftClose, PanelLeftOpen, Layers } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Layers, FlaskConical } from 'lucide-react';
 import { Toggle, Segmented, Select, Legend, Button } from '../ui/index.js';
 import './shell.css';
 
@@ -35,6 +35,8 @@ export function LeftRail({
   basemap, onBasemap,
   language, onLanguage,
   showRecent, onShowRecent,
+  // --- whatif ---
+  whatifEnabled, onWhatifEnabled,
 }) {
   return (
     <nav className={`shell-rail ${collapsed ? 'shell-rail--collapsed' : ''}`} aria-label="Panneau de couches">
@@ -84,6 +86,17 @@ export function LeftRail({
             <Segmented tabs={LANGUAGES} value={language} onChange={onLanguage} aria-label="Langue des libellés" />
           </div>
         </section>
+
+        {/* --- whatif --- bascule du bac à sable « what-if » (simulation locale, sans écriture DB) */}
+        <section className="shell-rail-section">
+          <span className="shell-rail-section__title caps" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <FlaskConical size={13} /> Simulation
+          </span>
+          <div className="shell-rail-section__rows">
+            <Toggle label="Bac à sable « what-if »" checked={!!whatifEnabled} onChange={onWhatifEnabled} />
+          </div>
+        </section>
+        {/* --- /whatif --- */}
 
         <section className="shell-rail-section">
           <span className="shell-rail-section__title caps">Légende — classe de charge</span>

@@ -8,6 +8,8 @@ import { LeftRail } from './shell/LeftRail.jsx';
 import { Inspector } from './shell/Inspector.jsx';
 import { getSearch, getStats, getHistogramme, getAlertes, geocodePlace } from './api.js';
 import { parseCoord } from './map/coords.js';
+import { useWhatIf } from './whatif/useWhatIf.js'; // --- whatif ---
+import WhatIfPanel from './whatif/WhatIfPanel.jsx'; // --- whatif ---
 import './shell/shell.css';
 
 const DEFAULT_LAYERS = { poste: false, transfo: true, ligne: true, point_service: false, support: false };
@@ -46,6 +48,9 @@ export default function App() {
   const [alertes, setAlertes] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(false);
+
+  // --- whatif --- contrôleur du bac à sable (état overlay, aucune écriture DB).
+  const whatif = useWhatIf();
 
   // Inspector + map fly state.
   const [feature, setFeature] = useState(null);
@@ -165,6 +170,9 @@ export default function App() {
             onLanguage={setLanguage}
             showRecent={showRecent}
             onShowRecent={setShowRecent}
+            /* --- whatif --- */
+            whatifEnabled={whatif.enabled}
+            onWhatifEnabled={whatif.toggleEnabled}
           />
           <div className="shell-mapwrap">
             <Map
@@ -178,8 +186,11 @@ export default function App() {
               showRecent={showRecent}
               flyTo={flyTo}
               onSelectFeature={handleMapSelect}
+              whatif={whatif} /* --- whatif --- */
             />
             <MapAlerts alertes={alertes} onSelect={selectFeature} />
+            {/* --- whatif --- panneau du bac à sable (visible en mode simulation) */}
+            {whatif.enabled && <WhatIfPanel wi={whatif} onClose={whatif.toggleEnabled} />}
           </div>
         </div>
       )}
