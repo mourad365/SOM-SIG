@@ -13,5 +13,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+  api:
+    build: ./api
+    environment:
+      POSTGRES_HOST: db
+      # Explicit container-internal port; do NOT inherit 5433 (host-side) from .env.
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      API_PORT: 3001
+    ports: ["3001:3001"]
+    depends_on:
+      db: { condition: service_healthy }
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_BASE: http://localhost:3001
+    ports: ["5173:5173"]
+    depends_on: [api]
 volumes:
   pgdata:
