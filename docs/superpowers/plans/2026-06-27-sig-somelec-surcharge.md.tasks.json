@@ -1,0 +1,96 @@
+{
+  "planPath": "docs/superpowers/plans/2026-06-27-sig-somelec-surcharge.md",
+  "tasks": [
+    {
+      "id": 0,
+      "subject": "Task 0: Repo scaffold + PostGIS container",
+      "status": "pending",
+      "description": "**Goal:** docker compose up db gives a running PostGIS DB.\n\n**Files:** docker-compose.yml, db/Dockerfile, .env.example, .gitignore\n\n**Verify:** docker compose exec db psql -c 'SELECT postgis_version();'\n\n```json:metadata\n{\"files\":[\"docker-compose.yml\",\"db/Dockerfile\",\".env.example\",\".gitignore\"],\"verifyCommand\":\"docker compose exec db psql -U somelec -d sig_somelec -c \\\"SELECT postgis_version();\\\"\",\"acceptanceCriteria\":[\"PostGIS container healthy\",\"psql connects and returns version\"]}\n```"
+    },
+    {
+      "id": 1,
+      "subject": "Task 1: Core schema — 7 MCD tables",
+      "status": "pending",
+      "blockedBy": [0],
+      "description": "**Goal:** 7 simplified-MCD tables, SRID 32628 geometry, GIST indexes.\n\n**Files:** db/migrations/001_schema.sql\n\n**Verify:** \\dt shows 7 tables; Find_SRID returns 32628\n\n```json:metadata\n{\"files\":[\"db/migrations/001_schema.sql\"],\"verifyCommand\":\"docker compose exec db psql -U somelec -d sig_somelec -c \\\"\\\\dt\\\"\",\"acceptanceCriteria\":[\"7 tables created\",\"geom SRID 32628 + GIST\",\"FK chain correct\"]}\n```"
+    },
+    {
+      "id": 2,
+      "subject": "Task 2: Reference tables, params, line attribution",
+      "status": "pending",
+      "blockedBy": [1],
+      "description": "**Goal:** parametre, ampacite_cable, nullable ligne.transfo_id, niveau_tension seed.\n\n**Files:** db/migrations/002_reference.sql\n\n**Verify:** SELECT cle,valeur FROM parametre lists 4 coefficients\n\n```json:metadata\n{\"files\":[\"db/migrations/002_reference.sql\"],\"verifyCommand\":\"docker compose exec db psql -U somelec -d sig_somelec -c \\\"SELECT cle,valeur FROM parametre ORDER BY cle;\\\"\",\"acceptanceCriteria\":[\"4 params\",\"ampacity lookup\",\"ligne.transfo_id nullable FK\",\"voltages seeded\"]}\n```"
+    },
+    {
+      "id": 3,
+      "subject": "Task 3: Nouakchott seed with trap transformer",
+      "status": "pending",
+      "blockedBy": [2],
+      "description": "**Goal:** Sample data incl. TR-TRAP (overloaded) and a normal transformer.\n\n**Files:** db/seed/010_nouakchott.sql\n\n**Verify:** TR-TRAP kva=160 with 350kW of points; TR-NORMAL kva=630 with 200kW\n\n```json:metadata\n{\"files\":[\"db/seed/010_nouakchott.sql\"],\"verifyCommand\":\"docker compose exec db psql -U somelec -d sig_somelec -c \\\"SELECT code_actif,puissance_kva FROM transformateur;\\\"\",\"acceptanceCriteria\":[\">=2 postes >=3 transfos\",\"TR-TRAP taux>1\",\"one normal transfo\"]}\n```"
+    },
+    {
+      "id": 4,
+      "subject": "Task 4: Load heuristic views + SQL tests",
+      "status": "pending",
+      "blockedBy": [3],
+      "description": "**Goal:** v_charge_transformateur and v_charge_ligne compute taux_charge/classe; verified.\n\n**Files:** db/migrations/003_views.sql, api/package.json, api/src/db.js, api/test/views.test.js\n\n**Verify:** cd api && npm test -- test/views.test.js\n\n```json:metadata\n{\"files\":[\"db/migrations/003_views.sql\",\"api/package.json\",\"api/src/db.js\",\"api/test/views.test.js\"],\"verifyCommand\":\"cd api && npm test -- test/views.test.js\",\"acceptanceCriteria\":[\"TR-TRAP critique\",\"TR-NORMAL normal\",\"attributed line numeric, unattributed inconnu\",\"zero-kVA guard\"]}\n```"
+    },
+    {
+      "id": 5,
+      "subject": "Task 5: Express skeleton + health",
+      "status": "pending",
+      "blockedBy": [4],
+      "description": "**Goal:** Express app with /health and pg pool.\n\n**Files:** api/src/server.js, api/test/health.test.js\n\n**Verify:** cd api && npm test -- test/health.test.js\n\n```json:metadata\n{\"files\":[\"api/src/server.js\",\"api/test/health.test.js\"],\"verifyCommand\":\"cd api && npm test -- test/health.test.js\",\"acceptanceCriteria\":[\"GET /health 200 db:true\",\"port from API_PORT\"]}\n```"
+    },
+    {
+      "id": 6,
+      "subject": "Task 6: Vector tile route via ST_AsMVT",
+      "status": "pending",
+      "blockedBy": [5],
+      "description": "**Goal:** GET /tiles/:layer/:z/:x/:y.pbf returns MVT for transfo and ligne.\n\n**Files:** api/src/tiles.js, api/src/server.js, api/test/tiles.test.js\n\n**Verify:** cd api && npm test -- test/tiles.test.js\n\n```json:metadata\n{\"files\":[\"api/src/tiles.js\",\"api/src/server.js\",\"api/test/tiles.test.js\"],\"verifyCommand\":\"cd api && npm test -- test/tiles.test.js\",\"acceptanceCriteria\":[\"transfo tile 200/204 protobuf\",\"unknown layer 400\",\"bad coords 400\"]}\n```"
+    },
+    {
+      "id": 7,
+      "subject": "Task 7: Dashboard aggregate API",
+      "status": "pending",
+      "blockedBy": [5],
+      "description": "**Goal:** /api/kpi, /api/top-surcharges, /api/asset/:type/:id.\n\n**Files:** api/src/api.js, api/src/server.js, api/test/api.test.js\n\n**Verify:** cd api && npm test -- test/api.test.js\n\n```json:metadata\n{\"files\":[\"api/src/api.js\",\"api/src/server.js\",\"api/test/api.test.js\"],\"verifyCommand\":\"cd api && npm test -- test/api.test.js\",\"acceptanceCriteria\":[\"kpi counts\",\"top-surcharges TR-TRAP first\",\"unknown asset 404\"]}\n```"
+    },
+    {
+      "id": 8,
+      "subject": "Task 8: React scaffold + API client + CORS",
+      "status": "pending",
+      "blockedBy": [7],
+      "description": "**Goal:** Vite React app boots and calls the API (CORS).\n\n**Files:** web/package.json, web/vite.config.js, web/index.html, web/src/main.jsx, web/src/App.jsx, web/src/api.js, api/src/server.js\n\n**Verify:** cd web && npm run build\n\n```json:metadata\n{\"files\":[\"web/package.json\",\"web/vite.config.js\",\"web/index.html\",\"web/src/main.jsx\",\"web/src/App.jsx\",\"web/src/api.js\",\"api/src/server.js\"],\"verifyCommand\":\"cd web && npm run build\",\"acceptanceCriteria\":[\"dev shows live KPI total\",\"CORS header present\"]}\n```"
+    },
+    {
+      "id": 9,
+      "subject": "Task 9: MapLibre map with load styling + filter",
+      "status": "pending",
+      "blockedBy": [6, 8],
+      "description": "**Goal:** Map renders transfo/ligne tiles colored by classe, overloads pop, legend + filter + popup.\n\n**Files:** web/src/map/style.js, web/src/map/Map.jsx, web/src/App.jsx\n\n**Verify:** Playwright via webapp-testing; TR-TRAP red\n\n```json:metadata\n{\"files\":[\"web/src/map/style.js\",\"web/src/map/Map.jsx\",\"web/src/App.jsx\"],\"verifyCommand\":\"cd web && npm run build\",\"acceptanceCriteria\":[\"critique red+large, surcharge amber, normal green, inconnu grey\",\"overloaded-only filter\",\"popup with taux\"]}\n```"
+    },
+    {
+      "id": 10,
+      "subject": "Task 10: Dashboard panel (KPI, top-10, histogram)",
+      "status": "pending",
+      "blockedBy": [9],
+      "description": "**Goal:** KPI cards, clickable top-10 fly-to table, load histogram.\n\n**Files:** web/src/dashboard/Dashboard.jsx, web/src/App.jsx, api/src/api.js\n\n**Verify:** Playwright: top-10 has TR-TRAP, click recenters map\n\n```json:metadata\n{\"files\":[\"web/src/dashboard/Dashboard.jsx\",\"web/src/App.jsx\",\"api/src/api.js\"],\"verifyCommand\":\"cd web && npm run build\",\"acceptanceCriteria\":[\"KPI cards\",\"top-10 fly-to\",\"histogram\",\"asset endpoint returns lng/lat\"]}\n```"
+    },
+    {
+      "id": 11,
+      "subject": "Task 11: QGIS doc + full-stack compose",
+      "status": "pending",
+      "blockedBy": [10],
+      "description": "**Goal:** QGIS connection guide + compose runs db+api+web end-to-end.\n\n**Files:** qgis/README.md, docker-compose.yml, api/Dockerfile, web/Dockerfile\n\n**Verify:** docker compose up -d then open http://localhost:5173\n\n```json:metadata\n{\"files\":[\"qgis/README.md\",\"docker-compose.yml\",\"api/Dockerfile\",\"web/Dockerfile\"],\"verifyCommand\":\"docker compose up -d --build\",\"acceptanceCriteria\":[\"QGIS connection documented\",\"full stack runs\",\"app loads with seed\"]}\n```"
+    },
+    {
+      "id": 12,
+      "subject": "Task 12: ADRs + README + acceptance",
+      "status": "pending",
+      "blockedBy": [11],
+      "description": "**Goal:** 4 ADRs, README quickstart, end-to-end trap acceptance.\n\n**Files:** docs/decisions/0001..0004, README.md\n\n**Verify:** acceptance script — SQL critique, API TR-TRAP, tile 200, web red\n\n```json:metadata\n{\"files\":[\"docs/decisions/0001-postgis-source-of-truth.md\",\"docs/decisions/0002-express-mvt-tiles.md\",\"docs/decisions/0003-static-heuristic-vs-loadflow.md\",\"docs/decisions/0004-ligne-load-attribution.md\",\"README.md\"],\"verifyCommand\":\"docker compose exec db psql -U somelec -d sig_somelec -tAc \\\"SELECT classe FROM v_charge_transformateur WHERE code_actif='TR-TRAP';\\\"\",\"acceptanceCriteria\":[\"4 ADRs\",\"README quickstart\",\"end-to-end trap visible\"]}\n```"
+    }
+  ],
+  "lastUpdated": "2026-06-27T00:00:00Z"
+}
