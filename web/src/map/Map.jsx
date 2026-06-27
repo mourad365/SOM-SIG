@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { Camera } from 'lucide-react';
 import './map.css';
 import { TILE_BASE } from '../api.js';
 import {
@@ -9,15 +10,36 @@ import {
   voltageColorExpr, surchargeHeatmapPaint, OVERLOADED_FILTER,
   transfoCritiquePulsePaint, CRITIQUE_FILTER,
   ligneFlowPaint, LIGNE_FLOW_FRAMES,
+  recentFilter, recentRingPaint, recentLigneCasingPaint,
 } from './style.js';
-import { classeColorExpr } from '../theme/tokens.js';
+import { classeColorExpr, COLOR, BRAND } from '../theme/tokens.js';
 import { MapLegend } from './MapLegend.jsx';
+import { COORD_FORMATS, formatCoord } from './coords.js';
+import { Select } from '../ui/index.js';
 
 const NOUAKCHOTT = { center: [-15.97, 18.09], zoom: 12 };
-const BASEMAPS = {
+const MIN_ZOOM = 4;
+const MAX_ZOOM = 22; // raised from MapLibre's effective default; vector tiles overzoom crisply.
+const RECENT_DAYS = 90;
+
+// Vector basemaps (CARTO/OpenMapTiles — carry name:ar / name:latin for relabelling).
+const VECTOR_BASEMAPS = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
 };
+// Satellite imagery (raster) — higher real-world resolution at deep zoom.
+const SATELLITE_STYLE = {
+  version: 8,
+  sources: {
+    sat: {
+      type: 'raster', tileSize: 256, maxzoom: 19,
+      tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+      attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
+    },
+  },
+  layers: [{ id: 'sat', type: 'raster', source: 'sat' }],
+};
+const styleForBasemap = (b) => (b === 'satellite' ? SATELLITE_STYLE : (VECTOR_BASEMAPS[b] || VECTOR_BASEMAPS.light));
 
 const DEFAULT_LAYERS = { poste: false, transfo: true, ligne: true, point_service: false, support: false };
 
@@ -45,7 +67,72 @@ const FILTER_FIELDS = {
 
 const fmtPct = (v) => (v == null || v === '' ? '—' : `${Math.round(Number(v))}%`);
 
-// Map: dark/light ops-console basemap + all network layers.
+// 90-day cutoff as an ISO date string — compared lexically against date_mise_service.
+function recentCutoffISO() {
+  const d = new Date();
+  d.setDate(d.getDate() - RECENT_DAYS);
+  return d.toISOString().slice(0, 10);
+}
+
+// Load the RTL shaping plugin once (needed for legible Arabic labels). Lazy = only
+// fetched the first time an Arabic glyph is rendered.
+let rtlPluginRequested = false;
+function ensureRTLPlugin() {
+  if (rtlPluginRequested) return;
+  rtlPluginRequested = true;
+  try {
+    maplibregl.setRTLTextPlugin(
+      'https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js',
+      null, true,
+    );
+  } catch { /* already set in this session */ }
+}
+
+// Build a small high-DPI marker icon (square / triangle) for symbol layers, so each
+// infrastructure type is distinguishable by SHAPE, not colour alone.
+function makeShapeIcon(kind, { fill, stroke }) {
+  const px = 22, ratio = 2, s = px * ratio, lw = 2 * ratio, pad = lw;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = s;
+  const ctx = cv.getContext('2d');
+  ctx.lineJoin = 'round';
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = lw;
+  if (kind === 'square') {
+    const r = 3 * ratio;
+    const x = pad, y = pad, w = s - pad * 2, hh = s - pad * 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + hh, r);
+    ctx.arcTo(x + w, y + hh, x, y + hh, r);
+    ctx.arcTo(x, y + hh, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  } else { // triangle
+    ctx.beginPath();
+    ctx.moveTo(s / 2, pad);
+    ctx.lineTo(s - pad, s - pad);
+    ctx.lineTo(pad, s - pad);
+    ctx.closePath();
+  }
+  ctx.fill();
+  ctx.stroke();
+  return { width: s, height: s, data: ctx.getImageData(0, 0, s, s).data, pixelRatio: ratio };
+}
+
+function ensureIcons(map) {
+  if (!map.hasImage('icon-poste')) {
+    const i = makeShapeIcon('square', { fill: BRAND.blue, stroke: '#FFFFFF' });
+    map.addImage('icon-poste', i, { pixelRatio: i.pixelRatio });
+  }
+  if (!map.hasImage('icon-support')) {
+    const i = makeShapeIcon('triangle', { fill: COLOR.textMuted, stroke: '#FFFFFF' });
+    map.addImage('icon-support', i, { pixelRatio: i.pixelRatio });
+  }
+}
+
+// Map: ops-console basemap (vector light/dark or satellite) + all network layers.
 export default function Map({
   layers = DEFAULT_LAYERS,
   colorBy = 'charge',
@@ -53,6 +140,8 @@ export default function Map({
   onlyOverloaded = false,
   filters = {},
   basemap = 'light',
+  language = 'fr',
+  showRecent = false,
   flyTo,
   onSelectFeature,
 }) {
@@ -62,9 +151,17 @@ export default function Map({
   const popupRef = useRef(null);
   const pulseRafRef = useRef(null);
   const flowRafRef = useRef(null);
+  const markerRef = useRef(null);        // transient pin for fly-to targets
+  const coordTextRef = useRef(null);     // live coordinate readout (updated imperatively)
+  const lastLngLatRef = useRef(null);    // last hovered lng/lat (for format re-render)
   // Latest props for event handlers bound once.
   const onSelectRef = useRef(onSelectFeature);
   onSelectRef.current = onSelectFeature;
+
+  const [coordFormat, setCoordFormat] = useState('dd');
+  const [zoom, setZoom] = useState(NOUAKCHOTT.zoom);
+  const coordFormatRef = useRef(coordFormat);
+  coordFormatRef.current = coordFormat;
 
   // Animate the critique pulse ring (radius 10->26, opacity 0.5->0 over ~1.6s,
   // looped) via requestAnimationFrame. Skipped under reduced-motion.
@@ -118,8 +215,24 @@ export default function Map({
     flowRafRef.current = requestAnimationFrame(tick);
   }
 
+  // Override basemap symbol labels to the chosen language (name:ar / name:latin).
+  function applyLabelLanguage(map, lang) {
+    let style;
+    try { style = map.getStyle(); } catch { return; }
+    if (!style || !style.layers) return;
+    const field = lang === 'ar'
+      ? ['coalesce', ['get', 'name:ar'], ['get', 'name']]
+      : ['coalesce', ['get', 'name:latin'], ['get', 'name:fr'], ['get', 'name']];
+    for (const layer of style.layers) {
+      if (layer.type !== 'symbol') continue;
+      if (!layer.layout || layer.layout['text-field'] === undefined) continue;
+      try { map.setLayoutProperty(layer.id, 'text-field', field); } catch { /* layer w/o text */ }
+    }
+  }
+
   // Add all sources + layers. Reused on initial load AND after setStyle (basemap switch).
   function addLayers(map) {
+    ensureIcons(map);
     SOURCES.forEach((s) => {
       if (!map.getSource(s)) {
         map.addSource(s, {
@@ -130,7 +243,15 @@ export default function Map({
       }
     });
 
-    // Order: lines under circles; small dots/squares high-zoom; poste on top.
+    const cutoff = recentCutoffISO();
+
+    // Order: recent ligne casing → lignes → gold flow → heat → dots → markers.
+    if (!map.getLayer('ligne-recent')) {
+      map.addLayer({
+        id: 'ligne-recent', type: 'line', source: 'ligne', 'source-layer': 'ligne',
+        filter: recentFilter(cutoff), paint: recentLigneCasingPaint, layout: { visibility: 'none' },
+      });
+    }
     if (!map.getLayer('ligne')) {
       map.addLayer({ id: 'ligne', type: 'line', source: 'ligne', 'source-layer': 'ligne', paint: ligneLinePaint });
     }
@@ -150,10 +271,21 @@ export default function Map({
         minzoom: 13, paint: pointServiceCirclePaint,
       });
     }
+    // Support: triangle icon (distinct shape per type).
     if (!map.getLayer('support')) {
       map.addLayer({
-        id: 'support', type: 'circle', source: 'support', 'source-layer': 'support',
-        minzoom: 14, paint: supportCirclePaint,
+        id: 'support', type: 'symbol', source: 'support', 'source-layer': 'support', minzoom: 14,
+        layout: {
+          'icon-image': 'icon-support', 'icon-allow-overlap': true,
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.55, 17, 0.9],
+        },
+      });
+    }
+    // Recent ring sits under the transfo marker (above its pulse).
+    if (!map.getLayer('transfo-recent')) {
+      map.addLayer({
+        id: 'transfo-recent', type: 'circle', source: 'transfo', 'source-layer': 'transfo',
+        filter: recentFilter(cutoff), paint: recentRingPaint, layout: { visibility: 'none' },
       });
     }
     // Pulse ring sits directly UNDER the solid transfo marker so the dot stays on top.
@@ -166,8 +298,21 @@ export default function Map({
     if (!map.getLayer('transfo')) {
       map.addLayer({ id: 'transfo', type: 'circle', source: 'transfo', 'source-layer': 'transfo', paint: transfoCirclePaint });
     }
+    if (!map.getLayer('poste-recent')) {
+      map.addLayer({
+        id: 'poste-recent', type: 'circle', source: 'poste', 'source-layer': 'poste',
+        filter: recentFilter(cutoff), paint: recentRingPaint, layout: { visibility: 'none' },
+      });
+    }
+    // Poste: square icon (distinct shape per type), kept as the topmost layer.
     if (!map.getLayer('poste')) {
-      map.addLayer({ id: 'poste', type: 'circle', source: 'poste', 'source-layer': 'poste', paint: posteCirclePaint });
+      map.addLayer({
+        id: 'poste', type: 'symbol', source: 'poste', 'source-layer': 'poste',
+        layout: {
+          'icon-image': 'icon-poste', 'icon-allow-overlap': true,
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 8, 0.6, 16, 1.05],
+        },
+      });
     }
   }
 
@@ -205,24 +350,39 @@ export default function Map({
         onSelectRef.current?.({ type: id, id: fid, lng: e.lngLat.lng, lat: e.lngLat.lat, ...p });
       });
     });
+
+    // Live coordinate readout (imperative — avoids a React render per mouse move).
+    map.on('mousemove', (e) => {
+      lastLngLatRef.current = e.lngLat;
+      if (coordTextRef.current) {
+        coordTextRef.current.textContent = formatCoord(coordFormatRef.current, e.lngLat.lng, e.lngLat.lat);
+      }
+    });
   }
 
   useEffect(() => {
+    ensureRTLPlugin();
     const map = new maplibregl.Map({
       container: ref.current,
-      style: BASEMAPS[basemap] || BASEMAPS.light,
+      style: styleForBasemap(basemap),
       center: NOUAKCHOTT.center,
       zoom: NOUAKCHOTT.zoom,
+      minZoom: MIN_ZOOM,
+      maxZoom: MAX_ZOOM,
       attributionControl: { compact: true },
+      preserveDrawingBuffer: true, // required so the canvas can be captured for export
     });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 
+    map.on('zoom', () => setZoom(map.getZoom()));
+
     map.on('load', () => {
       try {
         addLayers(map);
         bindInteractions(map);
+        applyLabelLanguage(map, language);
         startPulse(map);
         startFlow(map);
       } catch (err) {
@@ -237,6 +397,7 @@ export default function Map({
       if (pulseRafRef.current) cancelAnimationFrame(pulseRafRef.current);
       if (flowRafRef.current) cancelAnimationFrame(flowRafRef.current);
       popupRef.current?.remove();
+      markerRef.current?.remove();
       map.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -258,6 +419,11 @@ export default function Map({
     setVis('poste', layers.poste);
     setVis('point_service', layers.point_service);
     setVis('support', layers.support);
+
+    // Recent-infrastructure halos: only when enabled AND parent layer is visible.
+    setVis('transfo-recent', showRecent && layers.transfo);
+    setVis('poste-recent', showRecent && layers.poste);
+    setVis('ligne-recent', showRecent && layers.ligne);
 
     // color-by mode (load vs voltage) on transfo + ligne.
     const expr = colorBy === 'tension' ? voltageColorExpr : classeColorExpr;
@@ -291,12 +457,12 @@ export default function Map({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !loadedRef.current) return;
-    const target = BASEMAPS[basemap] || BASEMAPS.light;
-    map.setStyle(target);
+    map.setStyle(styleForBasemap(basemap));
     map.once('style.load', () => {
       try {
         addLayers(map);
         bindInteractions(map);
+        applyLabelLanguage(map, language);
         startPulse(map);
         startFlow(map);
       } catch (err) {
@@ -307,14 +473,190 @@ export default function Map({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [basemap]);
 
+  // Language switch on a live vector basemap (no full restyle needed).
   useEffect(() => {
-    if (flyTo && mapRef.current) mapRef.current.flyTo({ center: flyTo, zoom: 15, duration: 800 });
+    const map = mapRef.current;
+    if (map && loadedRef.current) applyLabelLanguage(map, language);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]);
+
+  // Re-render coordinate readout when the format changes (uses last hovered point).
+  useEffect(() => {
+    if (!coordTextRef.current) return;
+    const ll = lastLngLatRef.current || (mapRef.current && mapRef.current.getCenter());
+    coordTextRef.current.textContent = ll ? formatCoord(coordFormat, ll.lng, ll.lat) : '—';
+  }, [coordFormat]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!flyTo || !map) return;
+    map.flyTo({ center: flyTo, zoom: Math.max(map.getZoom(), 15), duration: 800 });
+    markerRef.current?.remove();
+    markerRef.current = new maplibregl.Marker({ color: BRAND.blue }).setLngLat(flyTo).addTo(map);
   }, [flyTo]);
+
+  // Export the current view as a PNG with north arrow, scale, date and an info panel.
+  function captureView() {
+    const map = mapRef.current;
+    if (!map) return;
+    map.once('render', () => exportComposite(map, { layers, colorBy, showRecent }));
+    map.triggerRepaint();
+  }
+
+  const zoomPct = Math.round(((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100);
 
   return (
     <div className="ops-map-wrap">
       <div className="ops-map" ref={ref} />
-      <MapLegend colorBy={colorBy} />
+      <MapLegend colorBy={colorBy} showRecent={showRecent} />
+
+      <button type="button" className="map-capture-btn" onClick={captureView} title="Exporter une capture (PNG)">
+        <Camera size={15} /> Capture
+      </button>
+
+      <div className="map-coordbar">
+        <Select
+          value={coordFormat}
+          onChange={setCoordFormat}
+          options={COORD_FORMATS}
+          aria-label="Format des coordonnées"
+          className="map-coordbar__fmt"
+        />
+        <span ref={coordTextRef} className="map-coordbar__val mono">—</span>
+        <span className="map-coordbar__sep" aria-hidden="true" />
+        <span className="map-coordbar__zoom mono" title="Niveau de zoom">
+          z{zoom.toFixed(1)} · {zoomPct}%
+        </span>
+      </div>
     </div>
   );
+}
+
+// ---- Capture / export ---------------------------------------------------------
+// Composites the map canvas with cartographic furniture and downloads a PNG.
+function exportComposite(map, ctx) {
+  const src = map.getCanvas();
+  const W = src.width, H = src.height;
+  const dpr = window.devicePixelRatio || 1;
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const c = out.getContext('2d');
+  c.drawImage(src, 0, 0);
+  c.scale(dpr, dpr);            // draw furniture in CSS px regardless of device ratio
+  const w = W / dpr, h = H / dpr;
+  const pad = 14;
+
+  drawNorthArrow(c, w - 38, 40);
+  drawScaleBar(c, pad, h - 64, map);
+
+  const now = new Date();
+  const stamp = now.toLocaleString('fr-FR', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  });
+  c.font = '12px Inter, system-ui, sans-serif';
+  drawChipText(c, stamp, w - pad - c.measureText(stamp).width - 8, h - 22);
+
+  const activeLayers = Object.entries(ctx.layers).filter(([, v]) => v).map(([k]) => LAYER_LABEL[k] || k);
+  const center = map.getCenter();
+  const lines = [
+    'SIG SOMELEC — Réseau électrique',
+    `Couches : ${activeLayers.join(', ') || '—'}`,
+    `Coloration : ${ctx.colorBy === 'tension' ? 'Niveau de tension' : 'Taux de charge'}`,
+    `Centre : ${formatCoord('dd', center.lng, center.lat)}`,
+    `Zoom : ${map.getZoom().toFixed(1)}${ctx.showRecent ? '  ·  Récents en évidence' : ''}`,
+  ];
+  drawInfoPanel(c, pad, pad, lines);
+
+  out.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `som-sig_${now.toISOString().slice(0, 16).replace(/[:T]/g, '-')}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
+const LAYER_LABEL = {
+  poste: 'Postes', transfo: 'Transformateurs', ligne: 'Lignes',
+  point_service: 'Points de service', support: 'Supports',
+};
+
+function drawInfoPanel(c, x, y, lines) {
+  c.font = '12px Inter, system-ui, sans-serif';
+  const wMax = Math.max(...lines.map((l) => c.measureText(l).width));
+  const boxW = wMax + 20, lineH = 17, boxH = lines.length * lineH + 14;
+  roundRect(c, x, y, boxW, boxH, 6);
+  c.fillStyle = 'rgba(15,25,45,0.78)';
+  c.fill();
+  c.textBaseline = 'top';
+  lines.forEach((line, i) => {
+    c.fillStyle = i === 0 ? '#FFFFFF' : 'rgba(225,234,243,0.92)';
+    c.font = `${i === 0 ? '600 12.5px' : '12px'} Inter, system-ui, sans-serif`;
+    c.fillText(line, x + 10, y + 9 + i * lineH);
+  });
+}
+
+function drawChipText(c, text, x, y) {
+  const tw = c.measureText(text).width;
+  roundRect(c, x - 8, y - 16, tw + 16, 22, 5);
+  c.fillStyle = 'rgba(15,25,45,0.78)';
+  c.fill();
+  c.fillStyle = '#FFFFFF';
+  c.textBaseline = 'middle';
+  c.fillText(text, x, y - 5);
+}
+
+function drawNorthArrow(c, cx, cy) {
+  c.save();
+  c.translate(cx, cy);
+  c.beginPath();
+  c.moveTo(0, -16); c.lineTo(7, 8); c.lineTo(0, 2); c.lineTo(-7, 8); c.closePath();
+  c.fillStyle = '#FFFFFF';
+  c.strokeStyle = 'rgba(15,25,45,0.85)';
+  c.lineWidth = 1.5;
+  c.fill(); c.stroke();
+  c.fillStyle = '#FFFFFF';
+  c.font = '700 12px Inter, system-ui, sans-serif';
+  c.textAlign = 'center';
+  c.textBaseline = 'bottom';
+  c.strokeText('N', 0, -18);
+  c.fillText('N', 0, -18);
+  c.restore();
+}
+
+function drawScaleBar(c, x, y, map) {
+  const center = map.getCenter();
+  const mpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / 2 ** map.getZoom();
+  const target = mpp * 120; // aim ~120px wide
+  const pow = 10 ** Math.floor(Math.log10(target));
+  let dist = pow;
+  for (const n of [1, 2, 3, 5]) { if (n * pow <= target) dist = n * pow; }
+  const barPx = dist / mpp;
+  const label = dist >= 1000 ? `${dist / 1000} km` : `${dist} m`;
+  c.textAlign = 'left';
+  c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(x, y + 8); c.lineTo(x, y); c.lineTo(x + barPx, y); c.lineTo(x + barPx, y + 8);
+  c.strokeStyle = 'rgba(15,25,45,0.85)'; c.lineWidth = 4; c.stroke();
+  c.strokeStyle = '#FFFFFF'; c.lineWidth = 2; c.stroke();
+  c.font = '700 11px Inter, system-ui, sans-serif';
+  c.textBaseline = 'bottom';
+  c.lineWidth = 3; c.strokeStyle = 'rgba(15,25,45,0.85)';
+  c.strokeText(label, x, y - 2);
+  c.fillStyle = '#FFFFFF';
+  c.fillText(label, x, y - 2);
+}
+
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
 }

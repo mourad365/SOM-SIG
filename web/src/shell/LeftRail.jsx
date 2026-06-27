@@ -14,11 +14,17 @@ const LAYER_DEFS = [
 const BASEMAPS = [
   { value: 'light', label: 'Clair (vecteur)' },
   { value: 'dark', label: 'Sombre (vecteur)' },
+  { value: 'satellite', label: 'Satellite (image)' },
 ];
 
 const COLOR_MODES = [
   { value: 'charge', label: 'Charge' },
   { value: 'tension', label: 'Tension' },
+];
+
+const LANGUAGES = [
+  { value: 'fr', label: 'Latin' },
+  { value: 'ar', label: 'العربية' },
 ];
 
 export function LeftRail({
@@ -28,6 +34,8 @@ export function LeftRail({
   heatmap, onHeatmap,
   onlyOverloaded, onOnlyOverloaded,
   basemap, onBasemap,
+  language, onLanguage,
+  showRecent, onShowRecent,
 }) {
   return (
     <nav className={`shell-rail ${collapsed ? 'shell-rail--collapsed' : ''}`} aria-label="Panneau de couches">
@@ -66,10 +74,15 @@ export function LeftRail({
           <div className="shell-rail-section__rows">
             <Toggle label="Heatmap des surcharges" checked={heatmap} onChange={onHeatmap} />
             <Toggle label="Surcharge uniquement" checked={onlyOverloaded} onChange={onOnlyOverloaded} />
+            <Toggle label="Infrastructures récentes" checked={!!showRecent} onChange={onShowRecent} />
           </div>
           <div className="shell-rail__field">
             <span className="caps">Fond de carte</span>
             <Select value={basemap} onChange={onBasemap} options={BASEMAPS} aria-label="Fond de carte" />
+          </div>
+          <div className="shell-rail__field">
+            <span className="caps">Libellés de la carte</span>
+            <Segmented tabs={LANGUAGES} value={language} onChange={onLanguage} aria-label="Langue des libellés" />
           </div>
         </section>
 

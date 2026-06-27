@@ -15,6 +15,31 @@ export async function getSearch(q) {
   return (await fetch(`${BASE}/api/search?q=${encodeURIComponent(q.trim())}`)).json();
 }
 
+// Place-name geocoding via OpenStreetMap Nominatim (external). Biased to Mauritania.
+// Returns [{type:'lieu', id, code, label, lng, lat}] — shape-compatible with getSearch.
+export async function geocodePlace(q) {
+  const query = (q || '').trim();
+  if (query.length < 3) return [];
+  const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5'
+    + '&countrycodes=mr&accept-language=fr'
+    + `&q=${encodeURIComponent(query)}`;
+  try {
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) return [];
+    const rows = await res.json();
+    return (Array.isArray(rows) ? rows : []).map((r) => ({
+      type: 'lieu',
+      id: r.place_id,
+      code: r.name || r.display_name?.split(',')[0],
+      label: r.display_name,
+      lng: Number(r.lon),
+      lat: Number(r.lat),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // params: { type, classe, niveau_tension, statut, q, sort, order, limit, offset }
 export async function getAssets(params = {}) {
   const qs = new URLSearchParams();

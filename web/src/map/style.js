@@ -112,4 +112,29 @@ export const CRITIQUE_FILTER = ['==', ['get', 'classe'], 'critique'];
 // Filter: show only surcharge + critique when enabled.
 export const OVERLOADED_FILTER = ['in', ['get', 'classe'], ['literal', OVERLOADED_CLASSES]];
 
-export { LOAD, VOLTAGE };
+// ---- Recent infrastructure highlight (gold "energy" emphasis) ----
+// Driven by date_mise_service >= cutoff (cutoff computed in Map.jsx from today).
+// Features lacking the date property fall back to '' which sorts below any real
+// ISO date → no halo, so this degrades gracefully if tiles omit the column.
+export const recentFilter = (cutoffISO) => ['>=', ['coalesce', ['get', 'date_mise_service'], ''], cutoffISO];
+
+// Gold ring placed UNDER point markers (transfo / poste) for recent assets.
+export const recentRingPaint = {
+  'circle-color': 'rgba(0,0,0,0)',
+  'circle-radius': ['match', ['get', 'classe'], 'critique', 14, 'surcharge', 12, 11],
+  'circle-stroke-width': 2.5,
+  'circle-stroke-color': COLOR.energy,
+  'circle-opacity': 0,
+  'circle-stroke-opacity': 0.95,
+  'circle-blur': 0.15,
+};
+
+// Gold casing under recent lignes.
+export const recentLigneCasingPaint = {
+  'line-color': COLOR.energy,
+  'line-gap-width': ['match', ['get', 'classe'], 'critique', 5, 'surcharge', 3.5, 2],
+  'line-width': 2.5,
+  'line-opacity': 0.85,
+};
+
+export { LOAD, VOLTAGE, COLOR };
