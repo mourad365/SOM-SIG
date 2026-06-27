@@ -1,8 +1,10 @@
 import express from 'express';
 import { query } from './db.js';
+import { tilesRouter } from './tiles.js';
 
 export function createApp() {
   const app = express();
+  app.use('/tiles', tilesRouter);
   app.get('/health', async (_req, res) => {
     try {
       await query('SELECT 1');
