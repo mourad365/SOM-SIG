@@ -22,13 +22,20 @@ const MIN_ZOOM = 4;
 const MAX_ZOOM = 22; // raised from MapLibre's effective default; vector tiles overzoom crisply.
 const RECENT_DAYS = 90;
 
-// Single standard street basemap (CARTO Voyager — Google-Maps-like, OpenMapTiles
-// schema so it carries name:ar / name:latin for relabelling). Satellite is layered
-// in as a raster ON TOP of this style (below our data) rather than swapping the whole
-// style — so the network layers are added once and never disappear when toggling.
+// Base style is CARTO Voyager (Google-Maps-like, OpenMapTiles schema so it carries
+// name:ar / name:latin for relabelling). Alternative basemaps (OpenStreetMap, satellite)
+// are layered in as opaque rasters ON TOP of this style (below our data) and toggled by
+// visibility — rather than swapping the whole style — so the network layers are added
+// once and never disappear when switching. Only one overlay is visible at a time; with
+// none visible, the Voyager vector base shows through ('map').
 const STREET_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 const SAT_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const SAT_ATTRIB = 'Imagery © Esri, Maxar, Earthstar Geographics';
+// OpenStreetMap standard raster. NOTE: tile.openstreetmap.org is fine for the pilot/demo,
+// but its usage policy forbids heavy/bulk traffic — swap for a hosted provider before
+// any high-volume production use. OSM labels are baked into the raster (no AR/Latin switch).
+const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const OSM_ATTRIB = '© OpenStreetMap contributors';
 
 const DEFAULT_LAYERS = { poste: false, transfo: true, ligne: true, point_service: false, support: false };
 
@@ -121,7 +128,7 @@ function ensureIcons(map) {
   }
 }
 
-// Map: ops-console basemap (vector light/dark or satellite) + all network layers.
+// Map: ops-console basemap (Voyager vector, OpenStreetMap, or satellite) + all network layers.
 export default function Map({
   layers = DEFAULT_LAYERS,
   colorBy = 'charge',
@@ -179,13 +186,13 @@ export default function Map({
     pulseRafRef.current = requestAnimationFrame(tick);
   }
 
-  // Signature electricity current-flow: ant-march the gold `ligne-flow` overlay
-  // by cycling line-dasharray frames at ~12fps so gold dashes travel along lines.
+  // Signature electricity current-flow: ant-march the electric-cyan `ligne-flow`
+  // overlay by cycling line-dasharray frames at ~12fps so cyan dashes travel along lines.
   // Skipped (static dashes) under reduced-motion; idles while the ligne layer is hidden.
   function startFlow(map) {
     if (flowRafRef.current) cancelAnimationFrame(flowRafRef.current);
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) return; // keep the static gold dashes from ligneFlowPaint
+    if (reduce) return; // keep the static cyan dashes from ligneFlowPaint
     const FRAME_MS = 90; // ~11fps — deliberately throttled, not 60fps
     let i = 0;
     let last = 0;
@@ -234,9 +241,15 @@ export default function Map({
 
     const cutoff = recentCutoffISO();
 
-    // Satellite raster — first of OUR layers, so it covers the Voyager basemap
-    // (roads/labels) but sits BELOW every network layer added after it. Toggled
-    // via visibility; never removed, so the data layers above it always render.
+    // Alternative basemap rasters — first of OUR layers, so they cover the Voyager
+    // base (roads/labels) but sit BELOW every network layer added after them. Toggled
+    // via visibility; never removed, so the data layers above always render.
+    if (!map.getSource('osm')) {
+      map.addSource('osm', { type: 'raster', tiles: [OSM_TILES], tileSize: 256, maxzoom: 19, attribution: OSM_ATTRIB });
+    }
+    if (!map.getLayer('osm')) {
+      map.addLayer({ id: 'osm', type: 'raster', source: 'osm', layout: { visibility: basemap === 'osm' ? 'visible' : 'none' } });
+    }
     if (!map.getSource('sat')) {
       map.addSource('sat', { type: 'raster', tiles: [SAT_TILES], tileSize: 256, maxzoom: 19, attribution: SAT_ATTRIB });
     }
@@ -244,7 +257,7 @@ export default function Map({
       map.addLayer({ id: 'satellite', type: 'raster', source: 'sat', layout: { visibility: basemap === 'satellite' ? 'visible' : 'none' } });
     }
 
-    // Order: recent ligne casing → lignes → gold flow → heat → dots → markers.
+    // Order: recent ligne casing → lignes → current flow → heat → dots → markers.
     if (!map.getLayer('ligne-recent')) {
       map.addLayer({
         id: 'ligne-recent', type: 'line', source: 'ligne', 'source-layer': 'ligne',
@@ -254,7 +267,7 @@ export default function Map({
     if (!map.getLayer('ligne')) {
       map.addLayer({ id: 'ligne', type: 'line', source: 'ligne', 'source-layer': 'ligne', paint: ligneLinePaint });
     }
-    // Gold current-flow overlay sits directly above the base ligne line.
+    // Electric-cyan current-flow overlay sits directly above the base ligne line.
     if (!map.getLayer('ligne-flow')) {
       map.addLayer({ id: 'ligne-flow', type: 'line', source: 'ligne', 'source-layer': 'ligne', paint: ligneFlowPaint });
     }
@@ -408,7 +421,8 @@ export default function Map({
     if (!map || !loadedRef.current) return;
 
     const setVis = (id, on) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'); };
-    // Basemap: street (Voyager) vs satellite raster overlay.
+    // Basemap: Voyager vector base ('map') vs OSM or satellite raster overlay.
+    setVis('osm', basemap === 'osm');
     setVis('satellite', basemap === 'satellite');
     setVis('transfo', layers.transfo);
     // Pulse ring follows the transfo layer (but reduced-motion keeps it hidden).
@@ -562,8 +576,8 @@ function exportComposite(map, ctx) {
 }
 
 const LAYER_LABEL = {
-  poste: 'Postes', transfo: 'Transformateurs', ligne: 'Lignes',
-  point_service: 'Points de service', support: 'Supports',
+  poste: 'Postes source', transfo: 'Transformateurs', ligne: 'Lignes BT',
+  point_service: 'Compteurs', support: 'Poteaux',
 };
 
 function drawInfoPanel(c, x, y, lines) {

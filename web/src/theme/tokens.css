@@ -1,8 +1,8 @@
 /* SIG SOMELEC — Centre de conduite réseau
- * Design tokens: LIGHT, brand-aligned (SOMELEC institutional blue + energy gold).
+ * Design tokens: LIGHT, brand-aligned (institutional blue + electric-cyan energy).
  * Color = signal. green/amber/red are LOAD-STATE ONLY. Brand blue is INTERACTIVE/chrome.
- * Gold is the ELECTRICITY/energy accent only (flow animation, wordmark mark).
- * See docs/design/design-system.md for the reference lock + decision ledger.
+ * Electric cyan is the ELECTRICITY/energy accent only (current-flow + constellation mark).
+ * See docs/design/design-system.md for the reference lock + decision ledger (gold retired: ADR 0006).
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -39,10 +39,11 @@
   --accent-soft:   rgba(14, 91, 166, 0.10);
   --focus-ring:    0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent);
 
-  /* ---- Energy accent: gold. ELECTRICITY motif only (current-flow, wordmark mark). ---- */
-  --energy:        #F4B400;
-  --energy-deep:   #D99A00;
-  --energy-soft:   rgba(244, 180, 0, 0.18);
+  /* ---- Energy accent: electric cyan. ELECTRICITY motif only (current-flow + constellation mark). ---- */
+  --energy:        #08AEC8;
+  --energy-deep:   #0B7C97;
+  --energy-soft:   rgba(8, 174, 200, 0.18);
+  --energy-glow:   rgba(8, 174, 200, 0.55);
 
   /* ---- Load-state semantics: SIGNAL ONLY (tuned for white bg) ---- */
   --load-normal:    #16A34A;

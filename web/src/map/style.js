@@ -29,19 +29,19 @@ export const ligneLinePaint = {
 };
 
 // ---- Ligne current-flow overlay (signature electricity motif) ----
-// A thin gold dashed line drawn above the base `ligne`. The dash offset is
-// cycled imperatively (ant-march) in Map.jsx to make current appear to flow.
-// Gold = energy/electricity accent ONLY (see tokens). Base dasharray below is
-// the reduced-motion / initial frame; the rAF loop swaps frames.
+// A thin electric-cyan dashed line drawn above the base `ligne`. The dash offset
+// is cycled imperatively (ant-march) in Map.jsx to make current appear to flow.
+// Electric cyan = energy/electricity accent ONLY (see tokens). Base dasharray
+// below is the reduced-motion / initial frame; the rAF loop swaps frames.
 export const ligneFlowPaint = {
-  'line-color': BRAND.gold,
+  'line-color': BRAND.electric,
   'line-width': 2,
   'line-opacity': 0.9,
   'line-dasharray': [0, 4, 3],
 };
 
 // Dash-offset frames for the flowing-current ant-march (~12fps). Each frame keeps
-// the same dash:gap total but shifts the leading transparent gap so the gold
+// the same dash:gap total but shifts the leading transparent gap so the cyan
 // dashes appear to travel forward along the line.
 export const LIGNE_FLOW_FRAMES = [
   [0, 4, 3], [1, 4, 2], [2, 4, 1], [3, 4, 0],
@@ -112,13 +112,13 @@ export const CRITIQUE_FILTER = ['==', ['get', 'classe'], 'critique'];
 // Filter: show only surcharge + critique when enabled.
 export const OVERLOADED_FILTER = ['in', ['get', 'classe'], ['literal', OVERLOADED_CLASSES]];
 
-// ---- Recent infrastructure highlight (gold "energy" emphasis) ----
+// ---- Recent infrastructure highlight (electric-cyan "energy" emphasis) ----
 // Driven by date_mise_service >= cutoff (cutoff computed in Map.jsx from today).
 // Features lacking the date property fall back to '' which sorts below any real
 // ISO date → no halo, so this degrades gracefully if tiles omit the column.
 export const recentFilter = (cutoffISO) => ['>=', ['coalesce', ['get', 'date_mise_service'], ''], cutoffISO];
 
-// Gold ring placed UNDER point markers (transfo / poste) for recent assets.
+// Electric-cyan ring placed UNDER point markers (transfo / poste) for recent assets.
 export const recentRingPaint = {
   'circle-color': 'rgba(0,0,0,0)',
   'circle-radius': ['match', ['get', 'classe'], 'critique', 14, 'surcharge', 12, 11],
@@ -129,7 +129,7 @@ export const recentRingPaint = {
   'circle-blur': 0.15,
 };
 
-// Gold casing under recent lignes.
+// Electric-cyan casing under recent lignes.
 export const recentLigneCasingPaint = {
   'line-color': COLOR.energy,
   'line-gap-width': ['match', ['get', 'classe'], 'critique', 5, 'surcharge', 3.5, 2],

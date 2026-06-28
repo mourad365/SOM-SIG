@@ -16,3 +16,4 @@ export { Dock } from './Dock.jsx';
 export { Legend } from './Legend.jsx';
 export { Spinner } from './Spinner.jsx';
 export { EmptyState } from './EmptyState.jsx';
+export { Constellation } from './Constellation.jsx';

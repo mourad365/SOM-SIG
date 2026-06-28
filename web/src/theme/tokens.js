@@ -15,12 +15,12 @@ export const LOAD_LABEL = {
   inconnu:   'Inconnu',
 };
 
-// SOMELEC brand. blue = interactive/chrome; gold (energy) = electricity motif only.
+// SOMELEC brand. blue = interactive/chrome; electric cyan (energy) = electricity motif only.
 export const BRAND = {
   blue: '#0E5BA6',
   blueDeep: '#0A4682',
-  gold: '#F4B400',
-  goldDeep: '#D99A00',
+  electric: '#08AEC8',
+  electricDeep: '#0B7C97',
 };
 
 export const COLOR = {
@@ -32,7 +32,7 @@ export const COLOR = {
   textSecondary: '#4A5A72',
   textMuted: '#8493A7',
   accent: '#0E5BA6',
-  energy: '#F4B400',
+  energy: '#08AEC8',
   grid: 'rgba(16,33,61,0.07)',
 };
 

@@ -3,16 +3,19 @@ import { PanelLeftClose, PanelLeftOpen, Layers } from 'lucide-react';
 import { Toggle, Segmented, Select, Legend, Button } from '../ui/index.js';
 import './shell.css';
 
+// Les clés restent le contrat des tuiles (cf. ADR 0007) ; seuls les libellés
+// suivent le modèle MCD : poste source, compteurs, poteaux.
 const LAYER_DEFS = [
-  { key: 'poste', label: 'Postes' },
+  { key: 'poste', label: 'Postes source' },
   { key: 'transfo', label: 'Transformateurs' },
-  { key: 'ligne', label: 'Lignes' },
-  { key: 'point_service', label: 'Points de service' },
-  { key: 'support', label: 'Supports' },
+  { key: 'ligne', label: 'Lignes BT' },
+  { key: 'point_service', label: 'Compteurs' },
+  { key: 'support', label: 'Poteaux' },
 ];
 
 const BASEMAPS = [
   { value: 'map', label: 'Carte' },
+  { value: 'osm', label: 'OpenStreetMap' },
   { value: 'satellite', label: 'Satellite' },
 ];
 
@@ -51,7 +54,6 @@ export function LeftRail({
 
       <div className="shell-rail__body">
         <section className="shell-rail-section">
-          <span className="shell-rail-section__title caps">Couches</span>
           <div className="shell-rail-section__rows">
             {LAYER_DEFS.map((l) => (
               <Toggle
