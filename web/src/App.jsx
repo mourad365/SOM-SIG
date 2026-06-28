@@ -6,6 +6,8 @@ import AssetsTable from './dashboard/AssetsTable.jsx';
 import { TopBar } from './shell/TopBar.jsx';
 import { LeftRail } from './shell/LeftRail.jsx';
 import { Inspector } from './shell/Inspector.jsx';
+import { useTrace } from './trace/useTrace.js';
+import { TracePanel } from './trace/TracePanel.jsx';
 import { getSearch, getStats, getHistogramme, getAlertes, geocodePlace } from './api.js';
 import { parseCoord } from './map/coords.js';
 import './shell/shell.css';
@@ -51,6 +53,10 @@ export default function App() {
   const [feature, setFeature] = useState(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [flyTo, setFlyTo] = useState(null);
+
+  // Traçabilité (Chantier 1) : impact aval de l'actif sélectionné.
+  const { data: trace, loading: traceLoading, error: traceError, run: runTrace, clear: clearTrace } = useTrace();
+  const handleTrace = useCallback((type, id) => { runTrace(type, id); }, [runTrace]);
 
   useEffect(() => {
     let alive = true;
@@ -176,10 +182,16 @@ export default function App() {
               basemap={basemap}
               language={language}
               showRecent={showRecent}
+              highlighted={trace?.affected || null}
               flyTo={flyTo}
               onSelectFeature={handleMapSelect}
             />
             <MapAlerts alertes={alertes} onSelect={selectFeature} />
+            {(trace || traceLoading || traceError) && (
+              <div className="trace-overlay">
+                <TracePanel trace={trace} loading={traceLoading} error={traceError} onClear={clearTrace} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -209,6 +221,7 @@ export default function App() {
         open={inspectorOpen}
         onClose={() => setInspectorOpen(false)}
         onFlyTo={(c) => setFlyTo([...c])}
+        onTrace={handleTrace}
       />
     </div>
   );

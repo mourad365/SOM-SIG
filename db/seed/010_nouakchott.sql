@@ -6,15 +6,20 @@ BEGIN;
 --   => to hit a target taux: kw = taux * kva * 1.5
 -- TR-TRAP is intentionally undersized -> critique.
 
--- ===== Postes (7) =====
+-- ===== Postes (7) — ancrés sur des sous-stations/centrales SOMELEC RÉELLES =====
+-- Coords & noms repris de db/seed/real_anchors.json (OSM / Open Infrastructure Map),
+-- transformés 4326 -> 32628 comme le reste du seed. L'ORDRE est figé : poste_id 1..7
+-- (serial) reste référencé tel quel par les transformateur.poste_id ci-dessous, donc
+-- le cas critique TR-TRAP (poste_id 2) est conservé intact. Type/tensions/statut
+-- inchangés ; seuls code/nom/géométrie passent au réel.
 INSERT INTO poste (code_poste, nom, type_poste, tension_primaire, tension_secondaire, statut, geom) VALUES
-  ('P-KSR-01', 'Poste Source Ksar', 'source', 'HTA33', 'HTA15', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.97000, 18.09500), 4326), 32628)),
-  ('P-TZN-01', 'Poste Tevragh Zeina', 'distribution', 'HTA15', 'BT', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.99500, 18.10500), 4326), 32628)),
-  ('P-SBK-01', 'Poste Sebkha', 'distribution', 'HTA15', 'BT', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.98500, 18.07500), 4326), 32628)),
-  ('P-ARF-01', 'Poste Arafat', 'distribution', 'HTA15', 'BT', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.95500, 18.07000), 4326), 32628)),
-  ('P-RYD-01', 'Poste Source Riyad', 'source', 'HTA33', 'HTA15', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.91000, 18.06000), 4326), 32628)),
-  ('P-TJN-01', 'Poste Toujounine', 'distribution', 'HTA15', 'BT', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.93000, 18.13000), 4326), 32628)),
-  ('P-SBK-02', 'Poste Sebkha Nord', 'distribution', 'HTA15', 'BT', 'en_projet', ST_Transform(ST_SetSRID(ST_MakePoint(-15.98000, 18.08200), 4326), 32628));
+  ('P-MANATALI', 'Centrale Manatali', 'source', 'HTA33', 'HTA15', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.974874, 18.044412), 4326), 32628)),
+  ('P-SONELEC5', 'Sonelec 5ème', 'distribution', 'HTA15', 'BT', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.997010, 18.073110), 4326), 32628)),
+  ('P-SEBKHA', 'Sonelec Sebkha', 'distribution', 'HTA15', 'BT', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.995833, 18.071156), 4326), 32628)),
+  ('P-ARAFAT', 'Centrale d''Arafat', 'distribution', 'HTA15', 'BT', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.975187, 18.046073), 4326), 32628)),
+  ('P-HYBRIDE', 'Centrale Hybride de Nouakchott', 'source', 'HTA33', 'HTA15', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.972103, 18.178601), 4326), 32628)),
+  ('P-TOUJOUNINE', 'Centrale Solaire de Toujounine', 'distribution', 'HTA15', 'BT', 'actif', ST_Transform(ST_SetSRID(ST_MakePoint(-15.889919, 18.092458), 4326), 32628)),
+  ('P-WHARF', 'Centrale du Wharf', 'distribution', 'HTA15', 'BT', 'en_projet', ST_Transform(ST_SetSRID(ST_MakePoint(-16.020408, 18.046508), 4326), 32628));
 
 -- ===== Transformateurs (30) =====
 INSERT INTO transformateur (code_actif, type_transfo, poste_id, puissance_kva, tension_primaire, tension_secondaire, etat, statut, geom) VALUES
