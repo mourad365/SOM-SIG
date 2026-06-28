@@ -14,11 +14,11 @@ const BIN_COLOR = {
 };
 
 const TYPE_LABEL = {
-  poste: 'Postes',
+  poste: 'Postes source',
   transformateur: 'Transfos',
-  ligne: 'Lignes',
-  point_service: 'Points service',
-  support: 'Supports',
+  ligne: 'Lignes BT',
+  point_service: 'Compteurs',
+  support: 'Poteaux',
 };
 
 function ChartTip({ active, payload, label }) {

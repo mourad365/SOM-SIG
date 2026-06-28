@@ -35,11 +35,11 @@ apiRouter.get('/stats', async (_req, res) => {
   try {
     const [counts, transfoClasse, ligneClasse, health] = await Promise.all([
       query(`
-        SELECT 'poste' AS k, COUNT(*)::int AS n FROM poste
+        SELECT 'poste' AS k, COUNT(*)::int AS n FROM poste_source
         UNION ALL SELECT 'transformateur', COUNT(*)::int FROM transformateur
-        UNION ALL SELECT 'ligne', COUNT(*)::int FROM ligne
-        UNION ALL SELECT 'point_service', COUNT(*)::int FROM point_service
-        UNION ALL SELECT 'support', COUNT(*)::int FROM support`),
+        UNION ALL SELECT 'ligne', COUNT(*)::int FROM ligne_bt
+        UNION ALL SELECT 'point_service', COUNT(*)::int FROM compteur
+        UNION ALL SELECT 'support', COUNT(*)::int FROM poteau_electrique`),
       query(`SELECT classe, COUNT(*)::int AS n FROM v_charge_transformateur GROUP BY classe`),
       query(`SELECT classe, COUNT(*)::int AS n FROM v_charge_ligne GROUP BY classe`),
       query(`
@@ -131,12 +131,13 @@ apiRouter.get('/assets', async (req, res) => {
     params.push(String(req.query.niveau_tension)); where.push(`niveau_tension = $${params.length}`);
   }
   if (req.query.statut) {
-    // transfo/ligne classes come from views that don't expose statut directly;
-    // join base table for statut filtering.
+    // statut/etat n'est pas exposé par les vues de charge ; on filtre via la table de base.
     params.push(String(req.query.statut));
-    const idCol = type === 'ligne' ? 'ligne_id' : 'transfo_id';
-    const base = type === 'ligne' ? 'ligne' : 'transformateur';
-    where.push(`${idCol} IN (SELECT ${idCol} FROM ${base} WHERE statut = $${params.length})`);
+    if (type === 'ligne') {
+      where.push(`ligne_id IN (SELECT id_ligne_bt FROM ligne_bt WHERE etat = $${params.length})`);
+    } else {
+      where.push(`transfo_id IN (SELECT id_transformateur FROM transformateur WHERE statut = $${params.length})`);
+    }
   }
   if (req.query.q) { params.push(`%${String(req.query.q)}%`); where.push(`code_actif ILIKE $${params.length}`); }
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -167,18 +168,18 @@ apiRouter.get('/search', async (req, res) => {
   const like = `%${q}%`;
   try {
     const { rows } = await query(`
-      (SELECT 'transfo' AS type, transfo_id AS id, code_actif AS code, code_actif AS label,
+      (SELECT 'transfo' AS type, id_transformateur AS id, code_transformateur AS code, code_transformateur AS label,
               ST_X(ST_Transform(geom,4326)) AS lng, ST_Y(ST_Transform(geom,4326)) AS lat
-       FROM transformateur WHERE code_actif ILIKE $1)
+       FROM transformateur WHERE code_transformateur ILIKE $1)
       UNION ALL
-      (SELECT 'poste' AS type, poste_id AS id, code_poste AS code, nom AS label,
+      (SELECT 'poste' AS type, id_poste_source AS id, ('PS-' || id_poste_source) AS code, nom_poste AS label,
               ST_X(ST_Transform(geom,4326)) AS lng, ST_Y(ST_Transform(geom,4326)) AS lat
-       FROM poste WHERE code_poste ILIKE $1 OR nom ILIKE $1)
+       FROM poste_source WHERE nom_poste ILIKE $1 OR ('PS-' || id_poste_source) ILIKE $1)
       UNION ALL
-      (SELECT 'ligne' AS type, ligne_id AS id, code_actif AS code, code_actif AS label,
+      (SELECT 'ligne' AS type, id_ligne_bt AS id, code_ligne_bt AS code, code_ligne_bt AS label,
               ST_X(ST_Transform(ST_Centroid(geom),4326)) AS lng,
               ST_Y(ST_Transform(ST_Centroid(geom),4326)) AS lat
-       FROM ligne WHERE code_actif ILIKE $1)
+       FROM ligne_bt WHERE code_ligne_bt ILIKE $1)
       LIMIT 10`, [like]);
     res.json(rows);
   } catch (err) {
@@ -196,21 +197,27 @@ apiRouter.get('/asset/:type/:id', async (req, res) => {
     if (type === 'ligne') {
       const { rows } = await query(
         `SELECT ligne_id, code_actif, niveau_tension, section_mm2, type_pose,
-                taux_charge, classe, capacite_a,
-                (SELECT longueur_m FROM ligne WHERE ligne_id = v.ligne_id) AS longueur_m,
+                taux_charge, classe, capacite_a, longueur_m,
                 ST_X(ST_Transform(ST_Centroid(geom),4326)) AS lng,
                 ST_Y(ST_Transform(ST_Centroid(geom),4326)) AS lat
          FROM v_charge_ligne v WHERE ligne_id = $1`, [id]);
       if (rows.length === 0) return res.status(404).json({ error: 'not found' });
       return res.json(rows[0]);
     }
+    // n_points_service = nb de compteurs en aval via la chaîne transfo→ligne_bt→poteau→branchement→local→compteur.
     const { rows } = await query(
       `SELECT v.transfo_id, v.code_actif, v.puissance_kva, v.charge_kva, v.taux_charge, v.classe,
-              p.nom AS poste_nom, p.code_poste,
-              (SELECT COUNT(*)::int FROM point_service ps WHERE ps.transfo_id = v.transfo_id) AS n_points_service,
+              ps.nom_poste AS poste_nom, ('PS-' || ps.id_poste_source) AS code_poste,
+              (SELECT COUNT(*)::int
+                 FROM ligne_bt b
+                 JOIN poteau_electrique pe ON pe.id_ligne_bt = b.id_ligne_bt
+                 JOIN branchement br ON br.id_poteau = pe.id_poteau
+                 JOIN "local" l ON l.id_branchement = br.id_branchement
+                 JOIN compteur c ON c.id_local = l.id_local
+                WHERE b.id_transformateur = v.transfo_id) AS n_points_service,
               ST_X(ST_Transform(v.geom,4326)) AS lng, ST_Y(ST_Transform(v.geom,4326)) AS lat
        FROM v_charge_transformateur v
-       LEFT JOIN poste p ON p.poste_id = v.poste_id
+       LEFT JOIN poste_source ps ON ps.id_poste_source = v.poste_id
        WHERE v.transfo_id = $1`, [id]);
     if (rows.length === 0) return res.status(404).json({ error: 'not found' });
     res.json(rows[0]);

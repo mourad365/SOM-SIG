@@ -13,8 +13,8 @@ function fmt(v, digits = 0) {
 }
 
 const TYPE_LABEL = {
-  transfo: 'Transformateur', ligne: 'Ligne', poste: 'Poste',
-  point_service: 'Point de service', support: 'Support',
+  transfo: 'Transformateur', ligne: 'Ligne BT', poste: 'Poste source',
+  point_service: 'Compteur', support: 'Poteau',
 };
 const LOAD_TYPES = ['transfo', 'ligne'];
 
@@ -83,8 +83,8 @@ export function Inspector({ feature, open, onClose, onFlyTo }) {
                 <Stat label="Capacité" value={fmt(d.puissance_kva)} unit="kVA" />
                 <Stat label="Charge" value={fmt(d.charge_kva, 1)} unit="kVA" />
                 <Stat label="Taux de charge" value={taux == null ? '—' : `${Math.round(taux * 100)}%`} />
-                <Stat label="Points de service" value={num(d.n_points ?? d.points_count)} />
-                {d.poste_nom && <Stat label="Poste" value={d.poste_nom} />}
+                <Stat label="Compteurs" value={num(d.n_points_service ?? d.n_points ?? d.points_count)} />
+                {d.poste_nom && <Stat label="Poste source" value={d.poste_nom} />}
               </>
             )}
             {type === 'ligne' && (

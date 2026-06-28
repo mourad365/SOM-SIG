@@ -21,9 +21,9 @@ export function MapLegend({ colorBy = 'charge', showRecent = false }) {
       <div className="map-legend__types caps">Types</div>
       <div className="ui-legend">
         <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--transfo" /> Transformateur</div>
-        <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--poste" /> Poste</div>
-        <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--support" /> Support</div>
-        <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--point" /> Point de service</div>
+        <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--poste" /> Poste source</div>
+        <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--support" /> Poteau</div>
+        <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--point" /> Compteur</div>
       </div>
 
       {showRecent && (
