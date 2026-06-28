@@ -31,7 +31,8 @@ Thumbs.db
 *.tmp
 coverage/
 
-# Agent tooling artifacts (ruflo / playwright / scratch)
+# Agent tooling artifacts (ruflo / playwright / scratch / git worktrees)
+.claude/
 .claude-flow/
 .swarm/
 .playwright-mcp/
