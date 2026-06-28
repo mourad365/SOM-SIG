@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from './db.js';
+import { analyticsRouter } from './analytics.js';
 
 export const apiRouter = Router();
 
@@ -218,3 +219,9 @@ apiRouter.get('/asset/:type/:id', async (req, res) => {
     console.error(err); res.status(500).json({ error: 'asset failed' });
   }
 });
+
+// --- analytics ---
+// Chantier 3 (jumeau numérique) : pertes non techniques + prévision de demande.
+// Routes définies dans analytics.js, montées ici sous /api (→ /api/pertes, /api/prevision).
+apiRouter.use('/', analyticsRouter);
+// --- /analytics ---

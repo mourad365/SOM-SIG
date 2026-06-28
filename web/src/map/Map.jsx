@@ -133,6 +133,11 @@ export default function Map({
   showRecent = false,
   flyTo,
   onSelectFeature,
+  // --- analytics --- (chantier 3) optional: hand the live map instance to overlays
+  // (Pertes / Prévision) so they can attach their own GeoJSON sources without
+  // touching the core layer setup. Non-breaking: undefined by default.
+  onMapReady,
+  // --- /analytics ---
 }) {
   const ref = useRef(null);
   const mapRef = useRef(null);
@@ -146,6 +151,10 @@ export default function Map({
   // Latest props for event handlers bound once.
   const onSelectRef = useRef(onSelectFeature);
   onSelectRef.current = onSelectFeature;
+  // --- analytics --- latest onMapReady for the once-bound load handler (chantier 3).
+  const onMapReadyRef = useRef(onMapReady);
+  onMapReadyRef.current = onMapReady;
+  // --- /analytics ---
 
   const [coordFormat, setCoordFormat] = useState('dd');
   const [zoom, setZoom] = useState(NOUAKCHOTT.zoom);
@@ -389,6 +398,9 @@ export default function Map({
       }
       loadedRef.current = true;
       applyState();
+      // --- analytics --- expose the ready map to analytics overlays (chantier 3).
+      try { onMapReadyRef.current?.(map); } catch (e) { console.warn('onMapReady failed', e); }
+      // --- /analytics ---
     });
 
     return () => {

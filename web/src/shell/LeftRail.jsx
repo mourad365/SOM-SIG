@@ -35,6 +35,10 @@ export function LeftRail({
   basemap, onBasemap,
   language, onLanguage,
   showRecent, onShowRecent,
+  // --- analytics --- (chantier 3) toggles pertes & prévision
+  showPertes, onShowPertes,
+  showPrevision, onShowPrevision,
+  // --- /analytics ---
 }) {
   return (
     <nav className={`shell-rail ${collapsed ? 'shell-rail--collapsed' : ''}`} aria-label="Panneau de couches">
@@ -84,6 +88,16 @@ export function LeftRail({
             <Segmented tabs={LANGUAGES} value={language} onChange={onLanguage} aria-label="Langue des libellés" />
           </div>
         </section>
+
+        {/* --- analytics --- (chantier 3 : jumeau numérique) */}
+        <section className="shell-rail-section">
+          <span className="shell-rail-section__title caps">Analyse (heuristique)</span>
+          <div className="shell-rail-section__rows">
+            <Toggle label="Pertes — zones suspectes" checked={!!showPertes} onChange={onShowPertes} />
+            <Toggle label="Prévision de saturation" checked={!!showPrevision} onChange={onShowPrevision} />
+          </div>
+        </section>
+        {/* --- /analytics --- */}
 
         <section className="shell-rail-section">
           <span className="shell-rail-section__title caps">Légende — classe de charge</span>

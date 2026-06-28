@@ -40,6 +40,15 @@ export async function geocodePlace(q) {
   }
 }
 
+// Analytics (jumeau numérique, chantier 3) — HEURISTIQUE, voir api/src/analytics.js.
+// Pertes non techniques inférées → [{transfo_id, code, ecart_pct, suspicion, mad_an_estime, lng, lat}]
+export async function getPertes() { return (await fetch(`${BASE}/api/pertes`)).json(); }
+// Prévision de saturation → { horizon, g, taux_seuils, transfos:[...], timeline:[{mois,n_critique,n_surcharge}] }
+export async function getPrevision(horizon = 0, g = 0.07) {
+  const qs = new URLSearchParams({ horizon: String(horizon), g: String(g) });
+  return (await fetch(`${BASE}/api/prevision?${qs}`)).json();
+}
+
 // params: { type, classe, niveau_tension, statut, q, sort, order, limit, offset }
 export async function getAssets(params = {}) {
   const qs = new URLSearchParams();
