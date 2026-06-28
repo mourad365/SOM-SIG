@@ -180,6 +180,21 @@ JOIN compteur cp ON cp.id_local = cl.id_local
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
+-- 11b) SOUS-DÉCLARATION (pertes non techniques) — signal pour l'analyse heuristique.
+--   ~1 zone transfo sur 6 simule des branchements informels / sous-déclarés : on
+--   réduit la puissance_demandee de ses locaux. Ces zones paraissent peu chargées
+--   mais l'inférence /api/pertes (densité clients × calibre médian) les repère.
+--   Appliqué AVANT le dimensionnement pour que la charge calculée reste cohérente.
+-- ============================================================================
+UPDATE "local" l
+SET puissance_demandee = GREATEST(1, round(l.puissance_demandee * 0.40))
+FROM branchement br
+JOIN poteau_electrique pe ON pe.id_poteau = br.id_poteau
+JOIN ligne_bt b           ON b.id_ligne_bt = pe.id_ligne_bt
+WHERE l.id_branchement = br.id_branchement
+  AND b.id_transformateur % 6 = 0;
+
+-- ============================================================================
 -- 12) DIMENSIONNEMENT DES TRANSFORMATEURS
 --   charge attendue = somme(puissance_demandee des locaux rattachés) * 0.6 / 0.9
 --   puissance_kva = palier standard le plus proche de charge / taux_cible ;

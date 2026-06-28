@@ -4,6 +4,13 @@ export async function getKpi() { return (await fetch(`${BASE}/api/kpi`)).json();
 export async function getTopSurcharges() { return (await fetch(`${BASE}/api/top-surcharges`)).json(); }
 export async function getAsset(type, id) { return (await fetch(`${BASE}/api/asset/${type}/${id}`)).json(); }
 
+// Traçabilité (Chantier 1) — impact amont/aval d'un actif (poste|transfo|ligne).
+// → { root, affected:{postes,transfos,lignes,points}, summary:{clients,charge_kva,transfos,lignes} }
+export async function getTrace(type, id, direction = 'down') {
+  const qs = direction === 'up' ? '?direction=up' : '';
+  return (await fetch(`${BASE}/api/trace/${type}/${id}${qs}`)).json();
+}
+
 // Dashboard endpoints ---------------------------------------------------------
 export async function getStats() { return (await fetch(`${BASE}/api/stats`)).json(); }
 export async function getHistogramme() { return (await fetch(`${BASE}/api/histogramme`)).json(); }
@@ -38,6 +45,15 @@ export async function geocodePlace(q) {
   } catch {
     return [];
   }
+}
+
+// Analytics (jumeau numérique, chantier 3) — HEURISTIQUE, voir api/src/analytics.js.
+// Pertes non techniques inférées → [{transfo_id, code, ecart_pct, suspicion, mad_an_estime, lng, lat}]
+export async function getPertes() { return (await fetch(`${BASE}/api/pertes`)).json(); }
+// Prévision de saturation → { horizon, g, taux_seuils, transfos:[...], timeline:[{mois,n_critique,n_surcharge}] }
+export async function getPrevision(horizon = 0, g = 0.07) {
+  const qs = new URLSearchParams({ horizon: String(horizon), g: String(g) });
+  return (await fetch(`${BASE}/api/prevision?${qs}`)).json();
 }
 
 // params: { type, classe, niveau_tension, statut, q, sort, order, limit, offset }

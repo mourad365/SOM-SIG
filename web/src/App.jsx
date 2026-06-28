@@ -1,13 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Map from './map/Map.jsx';
 import MapAlerts from './map/MapAlerts.jsx';
+import LossLayer from './analytics/LossLayer.jsx';
+import ForecastSlider from './analytics/ForecastSlider.jsx';
 import Dashboard from './dashboard/Dashboard.jsx';
 import AssetsTable from './dashboard/AssetsTable.jsx';
 import { TopBar } from './shell/TopBar.jsx';
 import { LeftRail } from './shell/LeftRail.jsx';
 import { Inspector } from './shell/Inspector.jsx';
+import { useTrace } from './trace/useTrace.js';
+import { TracePanel } from './trace/TracePanel.jsx';
 import { getSearch, getStats, getHistogramme, getAlertes, geocodePlace } from './api.js';
 import { parseCoord } from './map/coords.js';
+import { useWhatIf } from './whatif/useWhatIf.js'; // --- whatif ---
+import WhatIfPanel from './whatif/WhatIfPanel.jsx'; // --- whatif ---
 import './shell/shell.css';
 
 const DEFAULT_LAYERS = { poste: false, transfo: true, ligne: true, point_service: false, support: false };
@@ -30,6 +36,11 @@ export default function App() {
   const [showRecent, setShowRecent] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
 
+  // Analytics overlays (chantier 3) — pertes & prévision, plus l'instance carte.
+  const [showPertes, setShowPertes] = useState(false);
+  const [showPrevision, setShowPrevision] = useState(false);
+  const [mapInstance, setMapInstance] = useState(null);
+
   // Shell chrome state.
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -47,10 +58,17 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(false);
 
+  // --- whatif --- contrôleur du bac à sable (état overlay, aucune écriture DB).
+  const whatif = useWhatIf();
+
   // Inspector + map fly state.
   const [feature, setFeature] = useState(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [flyTo, setFlyTo] = useState(null);
+
+  // Traçabilité (Chantier 1) : impact aval de l'actif sélectionné.
+  const { data: trace, loading: traceLoading, error: traceError, run: runTrace, clear: clearTrace } = useTrace();
+  const handleTrace = useCallback((type, id) => { runTrace(type, id); }, [runTrace]);
 
   useEffect(() => {
     let alive = true;
@@ -165,6 +183,14 @@ export default function App() {
             onLanguage={setLanguage}
             showRecent={showRecent}
             onShowRecent={setShowRecent}
+            /* --- whatif --- */
+            whatifEnabled={whatif.enabled}
+            onWhatifEnabled={whatif.toggleEnabled}
+            /* --- analytics --- */
+            showPertes={showPertes}
+            onShowPertes={() => setShowPertes((v) => !v)}
+            showPrevision={showPrevision}
+            onShowPrevision={() => setShowPrevision((v) => !v)}
           />
           <div className="shell-mapwrap">
             <Map
@@ -176,10 +202,23 @@ export default function App() {
               basemap={basemap}
               language={language}
               showRecent={showRecent}
+              highlighted={trace?.affected || null}
               flyTo={flyTo}
               onSelectFeature={handleMapSelect}
+              whatif={whatif} /* --- whatif --- */
+              onMapReady={setMapInstance} /* --- analytics --- */
             />
             <MapAlerts alertes={alertes} onSelect={selectFeature} />
+            {(trace || traceLoading || traceError) && (
+              <div className="trace-overlay">
+                <TracePanel trace={trace} loading={traceLoading} error={traceError} onClear={clearTrace} />
+              </div>
+            )}
+            {/* --- whatif --- panneau du bac à sable (visible en mode simulation) */}
+            {whatif.enabled && <WhatIfPanel wi={whatif} onClose={whatif.toggleEnabled} />}
+            {/* --- analytics --- couches pertes & prévision (overlays GeoJSON) */}
+            <LossLayer map={mapInstance} active={showPertes} onSelect={selectFeature} />
+            <ForecastSlider map={mapInstance} active={showPrevision} onSelect={selectFeature} />
           </div>
         </div>
       )}
@@ -209,6 +248,7 @@ export default function App() {
         open={inspectorOpen}
         onClose={() => setInspectorOpen(false)}
         onFlyTo={(c) => setFlyTo([...c])}
+        onTrace={handleTrace}
       />
     </div>
   );

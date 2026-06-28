@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { Crosshair } from 'lucide-react';
+import { Crosshair, Share2 } from 'lucide-react';
 import { Drawer, Gauge, Stat, Badge, Button, Spinner, EmptyState } from '../ui/index.js';
 import { getAsset } from '../api.js';
+import { TRACEABLE } from '../trace/useTrace.js';
 import './shell.css';
 
 function num(v) { return v == null ? '—' : Number(v); }
@@ -19,7 +20,7 @@ const TYPE_LABEL = {
 const LOAD_TYPES = ['transfo', 'ligne'];
 
 // Right slide-in inspector. Opens when a map feature / dashboard row is selected; loads full asset detail.
-export function Inspector({ feature, open, onClose, onFlyTo }) {
+export function Inspector({ feature, open, onClose, onFlyTo, onTrace }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -113,6 +114,19 @@ export function Inspector({ feature, open, onClose, onFlyTo }) {
             >
               <Crosshair size={14} /> Centrer
             </Button>
+            {/* --- trace --- bouton « Tracer l'impact » (Chantier 1) */}
+            {onTrace && TRACEABLE.includes(type) && (
+              <Button
+                variant="primary" size="sm"
+                onClick={() => {
+                  const id = feature[`${type}_id`] ?? feature.id;
+                  if (id != null) onTrace(type, Number(id));
+                }}
+              >
+                <Share2 size={14} /> Tracer l'impact
+              </Button>
+            )}
+            {/* --- end trace --- */}
           </div>
         </div>
       )}
