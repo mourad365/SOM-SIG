@@ -1,6 +1,7 @@
 // Surbrillance de traçabilité (Chantier 1). Couches dédiées pilotées par le
 // feature-state `highlighted` afin de NE PAS restyler les couches existantes.
-// Couleurs = tokens uniquement (BRAND.gold/energy = accent électricité).
+// Couleurs = tokens uniquement (COLOR.energy = cyan électrique d'accentuation,
+// distinct des couleurs de charge ; BRAND.blue pour le poste racine).
 import { BRAND, COLOR } from '../theme/tokens.js';
 
 // Couches sources concernées par la trace -> id-field (== promoteId de la source).
@@ -25,24 +26,24 @@ const stateOpacity = (on, off) => ['case', ['boolean', ['feature-state', 'highli
 export function addTraceHighlightLayers(map) {
   const add = (id, def) => { if (!map.getLayer(id)) map.addLayer(def); };
 
-  // Halo doré pulsant sous/au niveau des transfos affectés.
+  // Halo cyan électrique au niveau des transfos affectés.
   add(`${HL_PREFIX}transfo`, {
     id: `${HL_PREFIX}transfo`, type: 'circle', source: 'transfo', 'source-layer': 'transfo',
     paint: {
       'circle-radius': 12,
       'circle-color': 'rgba(0,0,0,0)',
-      'circle-stroke-color': BRAND.gold,
+      'circle-stroke-color': COLOR.energy,
       'circle-stroke-width': 3,
       'circle-stroke-opacity': stateOpacity(0.95, 0),
       'circle-opacity': 0,
     },
   });
 
-  // Lignes affectées épaissies en doré.
+  // Lignes affectées épaissies en cyan électrique.
   add(`${HL_PREFIX}ligne`, {
     id: `${HL_PREFIX}ligne`, type: 'line', source: 'ligne', 'source-layer': 'ligne',
     paint: {
-      'line-color': BRAND.gold,
+      'line-color': COLOR.energy,
       'line-width': 6,
       'line-opacity': stateOpacity(0.85, 0),
     },
@@ -66,7 +67,7 @@ export function addTraceHighlightLayers(map) {
     id: `${HL_PREFIX}point_service`, type: 'circle', source: 'point_service', 'source-layer': 'point_service',
     paint: {
       'circle-radius': 4,
-      'circle-color': BRAND.gold,
+      'circle-color': COLOR.energy,
       'circle-stroke-color': COLOR.bgSurface,
       'circle-stroke-width': 1,
       'circle-opacity': stateOpacity(0.95, 0),
