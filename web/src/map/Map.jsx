@@ -59,6 +59,16 @@ const FILTER_FIELDS = {
 
 const fmtPct = (v) => (v == null || v === '' ? '—' : `${Math.round(Number(v))}%`);
 
+// --- whatif --- petites saisies (kVA / kW) pour le bac à sable. Renvoient null si annulé.
+function promptKva() {
+  const v = Number(window.prompt('Puissance du transformateur (kVA) ?', '250'));
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+function promptKw() {
+  const v = Number(window.prompt('Puissance souscrite du client (kW) ?', '30'));
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
 // 90-day cutoff as an ISO date string — compared lexically against date_mise_service.
 function recentCutoffISO() {
   const d = new Date();
@@ -137,6 +147,7 @@ export default function Map({
   highlighted = null, // --- trace --- ids affectés par la trace, par couche
   flyTo,
   onSelectFeature,
+  whatif = null, // --- whatif --- contrôleur du bac à sable (useWhatIf), ou null
 }) {
   const ref = useRef(null);
   const mapRef = useRef(null);
@@ -151,6 +162,9 @@ export default function Map({
   // Latest props for event handlers bound once.
   const onSelectRef = useRef(onSelectFeature);
   onSelectRef.current = onSelectFeature;
+  // --- whatif --- latest sandbox controller for the once-bound map click handler.
+  const whatifRef = useRef(whatif);
+  whatifRef.current = whatif;
 
   const [coordFormat, setCoordFormat] = useState('dd');
   const [zoom, setZoom] = useState(NOUAKCHOTT.zoom);
@@ -327,7 +341,88 @@ export default function Map({
     // Ajoutées en dernier => au-dessus. Réutilisent les sources de tuiles existantes.
     addTraceHighlightLayers(map);
     // --- end trace ---
+
+    // --- whatif ---------------------------------------------------------------
+    // Source GeoJSON overlay du bac à sable « what-if », rendue AU-DESSUS des tuiles
+    // vectorielles (jamais mutées). Recolore via la même expression `classe` des tokens.
+    if (!map.getSource('whatif')) {
+      map.addSource('whatif', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    }
+    // Points de service simulés (petits points neutres).
+    if (!map.getLayer('whatif-point')) {
+      map.addLayer({
+        id: 'whatif-point', type: 'circle', source: 'whatif',
+        filter: ['==', ['get', 'kind'], 'point'],
+        paint: {
+          'circle-color': COLOR.textSecondary,
+          'circle-radius': 3,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-opacity': 0.9,
+        },
+      });
+    }
+    // Halo de sélection sous le transfo sélectionné (anneau or = accent énergie).
+    if (!map.getLayer('whatif-transfo-sel')) {
+      map.addLayer({
+        id: 'whatif-transfo-sel', type: 'circle', source: 'whatif',
+        filter: ['all', ['==', ['get', 'kind'], 'transfo'], ['==', ['get', 'selected'], true]],
+        paint: {
+          'circle-color': 'rgba(0,0,0,0)',
+          'circle-radius': 15,
+          'circle-stroke-width': 3,
+          'circle-stroke-color': COLOR.energy,
+          'circle-stroke-opacity': 0.95,
+        },
+      });
+    }
+    // Transfos simulés — recolorés par la classe recalculée (même expression que les tuiles).
+    if (!map.getLayer('whatif-transfo')) {
+      map.addLayer({
+        id: 'whatif-transfo', type: 'circle', source: 'whatif',
+        filter: ['==', ['get', 'kind'], 'transfo'],
+        paint: {
+          'circle-color': classeColorExpr,
+          'circle-radius': ['match', ['get', 'classe'], 'critique', 10, 'surcharge', 8, 6],
+          'circle-stroke-width': 2.5,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-opacity': 0.97,
+        },
+      });
+    }
+    // --- /whatif --------------------------------------------------------------
   }
+
+  // --- whatif ---------------------------------------------------------------
+  // Capture d'un actif cliqué dans le bac à sable. Renvoie true si le clic a été
+  // consommé (=> ne pas inspecter). Aucun accès DB : on lit seulement les props de tuile.
+  function handleWhatIfFeatureClick(layerId, e) {
+    const wi = whatifRef.current;
+    if (!wi || !wi.enabled) return false;
+    const f = e.features[0];
+    if (!f) return false;
+    const p = f.properties || {};
+    if (layerId === 'transfo') {
+      // Les tuiles transfo exposent puissance_kva → capture directe.
+      const kva = p.puissance_kva != null ? Number(p.puissance_kva) : promptKva();
+      if (kva == null) return true;
+      wi.addTransfo({
+        id: `tr-${p.transfo_id}`, code: p.code_actif || `TR-${p.transfo_id}`,
+        puissance_kva: kva, lng: e.lngLat.lng, lat: e.lngLat.lat, source: 'capture',
+      });
+      return true;
+    }
+    if (layerId === 'point_service') {
+      // Les tuiles point n'exposent pas la puissance souscrite → on la demande.
+      if (!wi.selectedTransfoId) { window.alert('Sélectionnez d\'abord un transformateur dans le bac à sable.'); return true; }
+      const kw = promptKw();
+      if (kw == null) return true;
+      wi.addPoint({ transfo_id: wi.selectedTransfoId, puiss_souscrite_kw: kw, lng: e.lngLat.lng, lat: e.lngLat.lat, source: 'capture' });
+      return true;
+    }
+    return false;
+  }
+  // --- /whatif --------------------------------------------------------------
 
   // Bind hover + click handlers (idempotent enough for single mount).
   function bindInteractions(map) {
@@ -356,6 +451,8 @@ export default function Map({
 
     CLICK_LAYERS.forEach((id) => {
       map.on('click', id, (e) => {
+        // --- whatif --- en mode bac à sable, capter le clic d'actif au lieu d'inspecter.
+        if (handleWhatIfFeatureClick(id, e)) return;
         const f = e.features[0];
         if (!f) return;
         const p = f.properties || {};
@@ -363,6 +460,21 @@ export default function Map({
         onSelectRef.current?.({ type: id, id: fid, lng: e.lngLat.lng, lat: e.lngLat.lat, ...p });
       });
     });
+
+    // --- whatif ---------------------------------------------------------------
+    // Clic « à vide » sur la carte : en mode ajout, place un transformateur (saisie kVA).
+    map.on('click', (e) => {
+      const wi = whatifRef.current;
+      if (!wi || !wi.enabled || wi.mode !== 'add-transfo') return;
+      // Ignorer si un actif réel a été cliqué (géré par le handler de couche ci-dessus).
+      const hits = map.queryRenderedFeatures(e.point, { layers: CLICK_LAYERS.filter((l) => map.getLayer(l)) });
+      if (hits.length) return;
+      const kva = promptKva();
+      if (kva == null) return;
+      wi.addTransfo({ code: `SIM-${Date.now().toString().slice(-4)}`, puissance_kva: kva, lng: e.lngLat.lng, lat: e.lngLat.lat });
+      wi.setMode('idle');
+    });
+    // --- /whatif --------------------------------------------------------------
 
     // Live coordinate readout (imperative — avoids a React render per mouse move).
     map.on('mousemove', (e) => {
@@ -507,6 +619,19 @@ export default function Map({
     syncTraceHighlightVisibility(map, highlighted, layers);
   }, [highlighted, layers]);
   // --- end trace ---
+
+  // --- whatif ---------------------------------------------------------------
+  // Pousse l'overlay GeoJSON du bac à sable dans la source (sans toucher aux tuiles).
+  // Le curseur passe en réticule quand on est en mode « ajouter un transfo ».
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !loadedRef.current) return;
+    const src = map.getSource('whatif');
+    if (src) src.setData(whatif?.geojson || { type: 'FeatureCollection', features: [] });
+    const canvas = map.getCanvas();
+    if (canvas) canvas.style.cursor = whatif?.enabled && whatif?.mode === 'add-transfo' ? 'crosshair' : '';
+  }, [whatif?.geojson, whatif?.enabled, whatif?.mode]);
+  // --- /whatif --------------------------------------------------------------
 
   // Export the current view as a PNG with north arrow, scale, date and an info panel.
   function captureView() {
