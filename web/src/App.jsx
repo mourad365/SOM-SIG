@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Map from './map/Map.jsx';
 import MapAlerts from './map/MapAlerts.jsx';
+import LossLayer from './analytics/LossLayer.jsx';
+import ForecastSlider from './analytics/ForecastSlider.jsx';
 import Dashboard from './dashboard/Dashboard.jsx';
 import AssetsTable from './dashboard/AssetsTable.jsx';
 import { TopBar } from './shell/TopBar.jsx';
@@ -33,6 +35,11 @@ export default function App() {
   const [language, setLanguage] = useState('fr'); // map label language: 'fr' (latin) | 'ar'
   const [showRecent, setShowRecent] = useState(false);
   const [railCollapsed, setRailCollapsed] = useState(false);
+
+  // Analytics overlays (chantier 3) — pertes & prévision, plus l'instance carte.
+  const [showPertes, setShowPertes] = useState(false);
+  const [showPrevision, setShowPrevision] = useState(false);
+  const [mapInstance, setMapInstance] = useState(null);
 
   // Shell chrome state.
   const [search, setSearch] = useState('');
@@ -179,6 +186,11 @@ export default function App() {
             /* --- whatif --- */
             whatifEnabled={whatif.enabled}
             onWhatifEnabled={whatif.toggleEnabled}
+            /* --- analytics --- */
+            showPertes={showPertes}
+            onShowPertes={() => setShowPertes((v) => !v)}
+            showPrevision={showPrevision}
+            onShowPrevision={() => setShowPrevision((v) => !v)}
           />
           <div className="shell-mapwrap">
             <Map
@@ -194,6 +206,7 @@ export default function App() {
               flyTo={flyTo}
               onSelectFeature={handleMapSelect}
               whatif={whatif} /* --- whatif --- */
+              onMapReady={setMapInstance} /* --- analytics --- */
             />
             <MapAlerts alertes={alertes} onSelect={selectFeature} />
             {(trace || traceLoading || traceError) && (
@@ -203,6 +216,9 @@ export default function App() {
             )}
             {/* --- whatif --- panneau du bac à sable (visible en mode simulation) */}
             {whatif.enabled && <WhatIfPanel wi={whatif} onClose={whatif.toggleEnabled} />}
+            {/* --- analytics --- couches pertes & prévision (overlays GeoJSON) */}
+            <LossLayer map={mapInstance} active={showPertes} onSelect={selectFeature} />
+            <ForecastSlider map={mapInstance} active={showPrevision} onSelect={selectFeature} />
           </div>
         </div>
       )}

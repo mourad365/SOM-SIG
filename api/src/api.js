@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from './db.js';
 import { trace, TRACE_TYPES } from './topology.js';
+import { analyticsRouter } from './analytics.js';
 
 export const apiRouter = Router();
 
@@ -237,3 +238,9 @@ apiRouter.get('/trace/:type/:id', async (req, res) => {
   }
 });
 // --- end trace routes ---
+
+// --- analytics ---
+// Chantier 3 (jumeau numérique) : pertes non techniques + prévision de demande.
+// Routes définies dans analytics.js, montées ici sous /api (→ /api/pertes, /api/prevision).
+apiRouter.use('/', analyticsRouter);
+// --- /analytics ---

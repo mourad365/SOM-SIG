@@ -148,6 +148,11 @@ export default function Map({
   flyTo,
   onSelectFeature,
   whatif = null, // --- whatif --- contrôleur du bac à sable (useWhatIf), ou null
+  // --- analytics --- (chantier 3) optional: hand the live map instance to overlays
+  // (Pertes / Prévision) so they can attach their own GeoJSON sources without
+  // touching the core layer setup. Non-breaking: undefined by default.
+  onMapReady,
+  // --- /analytics ---
 }) {
   const ref = useRef(null);
   const mapRef = useRef(null);
@@ -165,6 +170,10 @@ export default function Map({
   // --- whatif --- latest sandbox controller for the once-bound map click handler.
   const whatifRef = useRef(whatif);
   whatifRef.current = whatif;
+  // --- analytics --- latest onMapReady for the once-bound load handler (chantier 3).
+  const onMapReadyRef = useRef(onMapReady);
+  onMapReadyRef.current = onMapReady;
+  // --- /analytics ---
 
   const [coordFormat, setCoordFormat] = useState('dd');
   const [zoom, setZoom] = useState(NOUAKCHOTT.zoom);
@@ -523,6 +532,9 @@ export default function Map({
         syncTraceHighlightVisibility(map, highlighted, layers);
       }
       // --- end trace ---
+      // --- analytics --- expose the ready map to analytics overlays (chantier 3).
+      try { onMapReadyRef.current?.(map); } catch (e) { console.warn('onMapReady failed', e); }
+      // --- /analytics ---
     });
 
     return () => {

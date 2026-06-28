@@ -37,6 +37,10 @@ export function LeftRail({
   showRecent, onShowRecent,
   // --- whatif ---
   whatifEnabled, onWhatifEnabled,
+  // --- analytics --- (chantier 3) toggles pertes & prévision
+  showPertes, onShowPertes,
+  showPrevision, onShowPrevision,
+  // --- /analytics ---
 }) {
   return (
     <nav className={`shell-rail ${collapsed ? 'shell-rail--collapsed' : ''}`} aria-label="Panneau de couches">
@@ -97,6 +101,16 @@ export function LeftRail({
           </div>
         </section>
         {/* --- /whatif --- */}
+
+        {/* --- analytics --- (chantier 3 : jumeau numérique) */}
+        <section className="shell-rail-section">
+          <span className="shell-rail-section__title caps">Analyse (heuristique)</span>
+          <div className="shell-rail-section__rows">
+            <Toggle label="Pertes — zones suspectes" checked={!!showPertes} onChange={onShowPertes} />
+            <Toggle label="Prévision de saturation" checked={!!showPrevision} onChange={onShowPrevision} />
+          </div>
+        </section>
+        {/* --- /analytics --- */}
 
         <section className="shell-rail-section">
           <span className="shell-rail-section__title caps">Légende — classe de charge</span>

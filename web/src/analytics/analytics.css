@@ -1,0 +1,76 @@
+/* Analytics overlays (jumeau numérique, chantier 3) — Pertes & Prévision.
+   Tokens only (theme/tokens.css). HEURISTIQUE : l'étiquette est rappelée en UI. */
+
+/* Bandeau « heuristique » réutilisé par les deux panneaux. */
+.an-heuristic {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-xs); color: var(--text-secondary);
+  background: var(--bg-surface-2); border-bottom: 1px solid var(--border);
+}
+.an-heuristic svg { color: var(--energy); flex: 0 0 auto; }
+
+/* ---- Panneau Pertes (zones suspectes) : flottant en bas-gauche ---- */
+.an-loss {
+  position: absolute; left: var(--sp-3); bottom: var(--sp-3); z-index: var(--z-chrome);
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2);
+}
+.an-loss__btn {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border);
+  background: var(--bg-surface); color: var(--text-primary);
+  border-radius: var(--r-full); box-shadow: var(--shadow-2);
+  font-size: var(--fs-sm); cursor: pointer;
+}
+.an-loss__btn:hover { background: var(--bg-surface-2); }
+.an-loss__btn svg { color: var(--text-muted); }
+.an-loss__btn--active { border-color: var(--accent); }
+.an-loss__btn--active svg { color: var(--accent); }
+
+.an-loss__panel {
+  width: 360px; max-height: 64vh; overflow-y: auto;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: var(--shadow-3);
+}
+.an-loss__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-3) var(--sp-3) var(--sp-2);
+}
+.an-loss__total { font-weight: 600; color: var(--text-primary); }
+.an-loss__total .mono { color: var(--load-critique); }
+.an-loss__list { padding: 0 var(--sp-2) var(--sp-2); }
+
+.an-suspect {
+  display: flex; align-items: center; gap: var(--sp-2);
+  width: 100%; text-align: left; cursor: pointer;
+  padding: var(--sp-2); border: 0; background: none;
+  border-radius: var(--r-sm); color: var(--text-primary);
+}
+.an-suspect:hover { background: var(--bg-surface-2); }
+.an-suspect__dot { width: 10px; height: 10px; border-radius: var(--r-full); flex: 0 0 auto; }
+.an-suspect__main { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.an-suspect__code { font-size: var(--fs-sm); font-weight: 600; }
+.an-suspect__meta { font-size: var(--fs-xs); color: var(--text-secondary); }
+.an-suspect__mad { font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; }
+
+/* ---- Curseur de prévision : barre flottante en bas-centre ---- */
+.an-forecast {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--sp-3) + 44px);
+  z-index: var(--z-chrome); width: min(560px, calc(100% - 2 * var(--sp-3)));
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: var(--shadow-3); overflow: hidden;
+}
+.an-forecast__body { padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.an-forecast__readout {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3);
+}
+.an-forecast__mois { font-size: var(--fs-sm); color: var(--text-secondary); }
+.an-forecast__mois .mono { color: var(--text-primary); font-weight: 600; }
+.an-forecast__counts { display: flex; gap: var(--sp-3); font-size: var(--fs-sm); }
+.an-forecast__count { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.an-forecast__count .mono { font-weight: 700; }
+.an-forecast__slider { width: 100%; accent-color: var(--accent); cursor: pointer; }
+.an-forecast__scale {
+  display: flex; justify-content: space-between;
+  font-size: var(--fs-xs); color: var(--text-muted);
+}
