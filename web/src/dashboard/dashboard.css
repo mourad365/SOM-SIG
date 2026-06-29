@@ -1,0 +1,68 @@
+.dash { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); }
+
+.dash-tabs { align-self: flex-start; }
+
+/* KPI strip — 6 readouts as one instrument cluster: a single surface with
+ * hairline vertical dividers, so the numbers read as a unified gauge bank. */
+.dash-kpis {
+  display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr));
+  gap: 0;
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md); box-shadow: var(--shadow-1);
+}
+.dash-kpis > * { padding: var(--sp-3) var(--sp-4); border-left: 1px solid var(--border-subtle); }
+.dash-kpis > *:first-child { border-left: 0; }
+
+/* Charts — 3 panels side by side */
+.dash-charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
+.dash-panel { min-width: 0; }
+.dash-chart { height: 168px; }
+.dash-center { display: flex; justify-content: center; padding: var(--sp-6); }
+
+.dash-tip {
+  background: var(--bg-surface-3); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: var(--sp-2); box-shadow: var(--shadow-2);
+}
+.dash-tip .caps { color: var(--text-secondary); }
+.dash-tip .mono { color: var(--text-primary); font-size: var(--fs-md); }
+
+/* Alerts — critique rows get a left signal stripe + a pulsing status dot.
+ * The pulse is CSS (not GSAP) so it survives pagination; the global
+ * prefers-reduced-motion rule parks it. */
+.alert-critique td:first-child { box-shadow: inset 2px 0 0 var(--load-critique); }
+.alert-type { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.alert-dot {
+  width: 7px; height: 7px; border-radius: var(--r-full);
+  background: var(--load-critique); flex: none;
+  box-shadow: 0 0 0 3px var(--load-critique-soft);
+}
+.alert-critique .alert-dot { animation: alert-dot-pulse 3.2s var(--ease-in-out) infinite; }
+@keyframes alert-dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+/* Assets table */
+.dash-assets__filters {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2);
+  margin-bottom: var(--sp-3); align-items: center;
+}
+.dash-assets__search { margin-left: auto; }
+.dash-assets__foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: var(--sp-3);
+}
+.dash-assets__pager { display: flex; align-items: center; gap: var(--sp-2); }
+.dash-assets__page { color: var(--text-secondary); font-size: var(--fs-xs); }
+
+@media (max-width: 1100px) {
+  .dash-charts { grid-template-columns: 1fr; }
+  .dash-kpis { grid-template-columns: repeat(3, 1fr); }
+  /* keep dividers tidy once the cluster wraps to a second row */
+  .dash-kpis > *:nth-child(3n+1) { border-left: 0; }
+  .dash-kpis > *:nth-child(n+4) { border-top: 1px solid var(--border-subtle); }
+}
+@media (max-width: 640px) {
+  .dash-kpis { grid-template-columns: repeat(2, 1fr); }
+  .dash-kpis > *:nth-child(3n+1) { border-left: 1px solid var(--border-subtle); }
+  .dash-kpis > *:nth-child(2n+1) { border-left: 0; }
+  .dash-kpis > *:nth-child(n+3) { border-top: 1px solid var(--border-subtle); }
+  .dash-assets__search { margin-left: 0; width: 100%; }
+}

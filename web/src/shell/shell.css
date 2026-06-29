@@ -1,0 +1,125 @@
+/* Operations-console app shell layout. Token-driven dims. */
+.shell {
+  display: grid;
+  grid-template-rows: var(--topbar-h) 1fr;
+  height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* ---- Top bar ---- */
+.shell-topbar {
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  z-index: var(--z-chrome);
+}
+.shell-wordmark { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; flex: 0 0 auto; }
+
+/* ---- View nav (Carte / Tableau / Actifs) ---- */
+.shell-nav { display: flex; align-items: center; gap: var(--sp-1); flex: 0 0 auto; }
+.shell-nav__item {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3); border: 0; background: none;
+  color: var(--text-secondary); font: 500 var(--fs-sm)/1 var(--font-ui);
+  border-radius: var(--r-sm); cursor: pointer; white-space: nowrap;
+  transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+.shell-nav__item:hover { background: var(--bg-surface-2); color: var(--text-primary); }
+.shell-nav__item--active { color: var(--brand); background: var(--brand-soft); }
+.shell-nav__badge {
+  font-size: 10px; line-height: 1; padding: 2px 5px; border-radius: var(--r-full);
+  background: var(--load-critique); color: #fff;
+}
+.shell-wordmark { gap: var(--sp-3); }
+.shell-wordmark__glyph { flex: none; }
+.shell-wordmark__mark {
+  font-weight: 650; font-size: var(--fs-md); letter-spacing: -0.005em; color: var(--text-primary);
+  white-space: nowrap;
+}
+.shell-wordmark__sub {
+  color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-left: var(--sp-3); margin-left: var(--sp-1); border-left: 1px solid var(--border);
+}
+.shell-topbar__search { position: relative; flex: 1 1 auto; display: flex; justify-content: center; }
+.shell-topbar__search > * { width: 100%; max-width: 460px; }
+
+/* ---- Global search results dropdown ---- */
+.shell-search-results {
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  width: min(520px, 90%); margin: 0; padding: var(--sp-1); list-style: none;
+  background: var(--bg-surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: var(--shadow-2); z-index: var(--z-modal);
+  max-height: 320px; overflow-y: auto;
+}
+.shell-search-result {
+  display: flex; align-items: center; gap: var(--sp-2); width: 100%;
+  padding: var(--sp-2) var(--sp-2); background: none; border: 0; border-radius: var(--r-sm);
+  color: var(--text-primary); font-size: var(--fs-sm); text-align: left; cursor: pointer;
+}
+.shell-search-result:hover, .shell-search-result:focus-visible { background: var(--bg-surface-3); }
+.shell-search-result__icon { color: var(--text-muted); flex: 0 0 auto; }
+.shell-search-result__code { flex: 0 0 auto; color: var(--text-primary); }
+.shell-search-result__label { flex: 1 1 auto; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shell-search-result__type { flex: 0 0 auto; }
+.shell-topbar__right { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); flex: 0 0 auto; }
+
+/* ---- Full-screen views (Tableau / Actifs) ---- */
+.shell-view { grid-row: 2; min-height: 0; overflow-y: auto; background: var(--bg-base); }
+.shell-view--pad { padding: var(--sp-5); }
+.view-title { font-size: var(--fs-lg); font-weight: 600; margin: 0 0 var(--sp-4); color: var(--text-primary); }
+
+/* Hide secondary chrome on tighter widths so the nav + search keep room. */
+@media (max-width: 1280px) { .shell-wordmark__sub { display: none; } }
+@media (max-width: 1080px) { .shell-maj { display: none; } }
+.shell-maj { color: var(--text-secondary); font-size: var(--fs-xs); white-space: nowrap; display: inline-flex; align-items: center; gap: var(--sp-1); }
+.shell-maj__time { font-family: var(--font-mono); color: var(--text-primary); }
+
+/* ---- Main row: rail + map ---- */
+.shell-main {
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 0;
+  position: relative;
+}
+
+/* ---- Left rail ---- */
+.shell-rail {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  width: var(--rail-w);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: width var(--dur-slow) var(--ease-out);
+  z-index: var(--z-chrome);
+}
+.shell-rail--collapsed { width: var(--rail-w-collapsed); }
+.shell-rail__top { display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-3); border-bottom: 1px solid var(--border-subtle); }
+.shell-rail__body { overflow-y: auto; overflow-x: hidden; padding: var(--sp-1) var(--sp-3); display: flex; flex-direction: column; }
+.shell-rail--collapsed .shell-rail__body { display: none; }
+/* Even vertical rhythm: each section is a divider-separated band of equal padding. */
+.shell-rail-section { display: flex; flex-direction: column; gap: var(--sp-3);
+  padding: var(--sp-4) 0; border-bottom: 1px solid var(--border-subtle); }
+.shell-rail-section:last-child { border-bottom: 0; padding-bottom: var(--sp-3); }
+.shell-rail-section__title { color: var(--text-muted); }
+.shell-rail-section__rows { display: flex; flex-direction: column; gap: var(--sp-3); }
+.shell-rail__field { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+/* ---- Map host ---- */
+.shell-mapwrap { position: relative; min-width: 0; overflow: hidden; }
+
+/* ---- Inspector body ---- */
+.inspector-head { display: flex; flex-direction: column; gap: var(--sp-2);
+  padding-bottom: var(--sp-4); margin-bottom: var(--sp-1); border-bottom: 1px solid var(--border-subtle); }
+.inspector-code { font-family: var(--font-mono); font-size: var(--fs-lg); font-weight: 600;
+  letter-spacing: -0.01em; color: var(--text-primary); }
+.inspector-gauge { display: flex; justify-content: center; padding: var(--sp-5) 0 var(--sp-6); }
+.inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+.inspector-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-6);
+  padding-top: var(--sp-4); border-top: 1px solid var(--border-subtle); }

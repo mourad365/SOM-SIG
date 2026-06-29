@@ -30,3 +30,11 @@ Thumbs.db
 # Misc
 *.tmp
 coverage/
+
+# Agent tooling artifacts (ruflo / playwright / scratch / git worktrees)
+.claude/
+.claude-flow/
+.swarm/
+.playwright-mcp/
+ruvector.db
+*.png

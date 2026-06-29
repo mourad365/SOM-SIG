@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createApp } from '../src/server.js';
 import pool from '../src/db.js';
 
-// z/x/y actually covering the Nouakchott seed (TR-TRAP at lon -15.954, lat 18.104).
+// z/x/y covering the real Nouakchott footprint (lignes/poteaux ~lon -15.95, lat 18.11).
 const Z = 12, X = 1866, Y = 1838;
 
 test('transfo tile returns a non-empty protobuf', async () => {

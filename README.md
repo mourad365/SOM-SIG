@@ -23,6 +23,13 @@ transformers/lines. Stack: PostgreSQL/PostGIS · Express (tiles via ST_AsMVT + A
 
 See `qgis/README.md`. Edits land in the same PostGIS the web app reads.
 
+## Données
+
+Le schéma suit le MCD métier source→client (ADR 0007). Les géométries terrain réelles
+(lignes BT, poteaux, parcelles de `Données.zip`) sont chargées via `db/tools/shp2sql.mjs`
+→ `db/seed/010_real_geometry.sql` ; le réseau MT, les transformateurs et la couche
+commerciale sont synthétisés de façon déterministe par PostGIS (`db/seed/020_synthese.sql`).
+
 ## Décisions
 
-Les choix d'architecture sont consignés dans `docs/decisions/` (ADR 0001–0004).
+Les choix d'architecture sont consignés dans `docs/decisions/` (ADR 0001–0007).
