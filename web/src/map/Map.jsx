@@ -317,7 +317,7 @@ export default function Map({
     if (!map.getLayer('point_service')) {
       map.addLayer({
         id: 'point_service', type: 'circle', source: 'point_service', 'source-layer': 'point_service',
-        minzoom: 13, paint: pointServiceCirclePaint,
+        minzoom: 15, paint: pointServiceCirclePaint,
       });
     }
     // Support: triangle icon (distinct shape per type).

@@ -57,13 +57,16 @@ export const posteCirclePaint = {
   'circle-opacity': 0.9,
 };
 
-// ---- Point de service (tiny dots, high zoom) ----
+// ---- Point de service / compteurs (tiny blue dots, very high zoom only) ----
+// ~8k client meters. Blue, small, and strokeless on purpose: the old near-white
+// stroke (bgBase) made each dot read as a pale halo, and en masse they buried the
+// colored transfo/ligne load markers. No stroke + low opacity + small radius lets
+// them recede; they only render at z≥15 (minzoom set in Map.jsx).
 export const pointServiceCirclePaint = {
-  'circle-color': COLOR.textSecondary,
-  'circle-radius': 2.5,
-  'circle-stroke-width': 0.5,
-  'circle-stroke-color': COLOR.bgBase,
-  'circle-opacity': 0.85,
+  'circle-color': BRAND.blue,
+  'circle-radius': ['interpolate', ['linear'], ['zoom'], 15, 1.6, 19, 3],
+  'circle-stroke-width': 0,
+  'circle-opacity': 0.7,
 };
 
 // ---- Support (tiny squares via square-ish small circles, very high zoom) ----
