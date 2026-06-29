@@ -1,6 +1,21 @@
 .ops-map-wrap { position: absolute; inset: 0; }
 .ops-map { position: absolute; inset: 0; }
 
+/* Command-center framing — both layers are inert (pointer-events: none):
+ *  ::before  a live electric hairline along the top edge ("the network is energised")
+ *  ::after   a soft inner vignette that focuses the eye toward the network */
+.ops-map-wrap::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  z-index: 3; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--energy) 22%, var(--energy-bright) 50%, var(--energy) 78%, transparent);
+  opacity: 0.5;
+}
+.ops-map-wrap::after {
+  content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  box-shadow: inset 0 0 150px rgba(16, 33, 61, 0.13);
+}
+@media (prefers-reduced-motion: reduce) { .ops-map-wrap::before { opacity: 0.4; } }
+
 /* ---- Floating alerts (Carte view) ---- */
 .map-alerts {
   position: absolute; top: var(--sp-3); right: var(--sp-3); z-index: var(--z-chrome);
@@ -8,18 +23,24 @@
 }
 .map-alerts__btn {
   display: inline-flex; align-items: center; gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border);
-  background: var(--bg-surface); color: var(--text-primary);
-  border-radius: var(--r-full); box-shadow: var(--shadow-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-float); color: var(--text-primary);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25); backdrop-filter: blur(10px) saturate(1.25);
+  border: 1px solid var(--border-float);
+  border-radius: var(--r-full); box-shadow: var(--shadow-float);
   font-size: var(--fs-sm); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-.map-alerts__btn:hover { background: var(--bg-surface-2); }
+.map-alerts__btn:hover { background: var(--bg-surface); transform: translateY(-1px); }
 .map-alerts__btn svg { color: var(--text-muted); }
+.map-alerts__btn--critique { box-shadow: var(--shadow-float), var(--glow-critique); }
 .map-alerts__btn--critique svg { color: var(--load-critique); }
 .map-alerts__btn .mono { font-weight: 600; }
 .map-alerts__panel {
   width: 340px; max-height: 60vh; overflow-y: auto;
-  background: var(--bg-surface); border: 1px solid var(--border);
+  background: var(--bg-float);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25); backdrop-filter: blur(14px) saturate(1.25);
+  border: 1px solid var(--border-float);
   border-radius: var(--r-md); box-shadow: var(--shadow-3);
 }
 .map-alerts__head {
@@ -37,8 +58,9 @@
 .map-coordbar {
   position: absolute; left: 50%; transform: translateX(-50%); bottom: var(--sp-3);
   z-index: var(--z-chrome); display: flex; align-items: center; gap: var(--sp-2);
-  background: var(--bg-surface); border: 1px solid var(--border-subtle);
-  border-radius: var(--r-full); box-shadow: var(--shadow-2);
+  background: var(--bg-float); border: 1px solid var(--border-float);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25); backdrop-filter: blur(10px) saturate(1.25);
+  border-radius: var(--r-full); box-shadow: var(--shadow-float);
   padding: 4px 10px 4px 6px;
 }
 .map-coordbar__fmt .ui-select { height: 26px; padding: 0 26px 0 10px; font-size: var(--fs-xs); }
@@ -51,10 +73,14 @@
 
 /* ---- Trace d'impact (Chantier 1) — panneau flottant haut-gauche ---- */
 .trace-overlay {
-  position: absolute; left: var(--sp-3); top: var(--sp-3); z-index: var(--z-chrome);
+  position: absolute; left: var(--sp-3); top: calc(var(--sp-3) + 4px); z-index: var(--z-chrome);
   width: 270px; max-width: calc(100% - 2 * var(--sp-3));
 }
-.trace-overlay .trace-panel { box-shadow: var(--shadow-2); }
+.trace-overlay .ui-panel {
+  background: var(--bg-float);
+  -webkit-backdrop-filter: blur(12px) saturate(1.25); backdrop-filter: blur(12px) saturate(1.25);
+  border-color: var(--border-float); box-shadow: var(--shadow-float);
+}
 .trace-body { display: flex; flex-direction: column; gap: var(--sp-3); }
 .trace-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
 .trace-root-code {
@@ -70,22 +96,26 @@
 
 /* ---- Capture / export button (top-right) ---- */
 .map-capture-btn {
-  position: absolute; top: var(--sp-3); right: var(--sp-3); z-index: var(--z-chrome);
+  /* bottom-right, lifted above the MapLibre zoom control — avoids the top-right
+   * alerts pill, the bottom-center coordbar, and the bottom-left legend. */
+  position: absolute; bottom: 96px; right: var(--sp-3); z-index: var(--z-chrome);
   display: inline-flex; align-items: center; gap: 6px;
-  background: var(--bg-surface); color: var(--text-primary);
-  border: 1px solid var(--border-subtle); border-radius: var(--r-md);
-  box-shadow: var(--shadow-2); padding: 7px 11px;
+  background: var(--bg-float); color: var(--text-primary);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25); backdrop-filter: blur(10px) saturate(1.25);
+  border: 1px solid var(--border-float); border-radius: var(--r-md);
+  box-shadow: var(--shadow-float); padding: 7px 11px;
   font-family: var(--font-ui); font-size: var(--fs-xs); font-weight: 600; cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-.map-capture-btn:hover { background: var(--bg-surface-2); }
+.map-capture-btn:hover { background: var(--bg-surface); transform: translateY(-1px); }
 .map-capture-btn:active { transform: translateY(1px); }
 
 /* ---- Floating legend (bottom-left, above scale control) ---- */
 .map-legend {
   position: absolute; left: var(--sp-3); bottom: 40px; z-index: var(--z-chrome);
-  background: var(--bg-surface); border: 1px solid var(--border-subtle);
-  border-radius: var(--r-md); box-shadow: var(--shadow-2);
+  background: var(--bg-float); border: 1px solid var(--border-float);
+  -webkit-backdrop-filter: blur(12px) saturate(1.25); backdrop-filter: blur(12px) saturate(1.25);
+  border-radius: var(--r-md); box-shadow: var(--shadow-float);
   padding: var(--sp-3); min-width: 140px;
 }
 .map-legend__title { margin-bottom: var(--sp-2); }
@@ -106,9 +136,10 @@
 
 /* ---- Hover tooltip popup ---- */
 .map-tip-popup .maplibregl-popup-content {
-  background: var(--bg-surface); color: var(--text-primary);
-  border: 1px solid var(--border); border-radius: var(--r-sm);
-  box-shadow: var(--shadow-2); padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs);
+  background: var(--bg-float); color: var(--text-primary);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25); backdrop-filter: blur(10px) saturate(1.25);
+  border: 1px solid var(--border-float); border-radius: var(--r-sm);
+  box-shadow: var(--shadow-float); padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs);
 }
 .map-tip-popup .maplibregl-popup-tip { display: none; }
 .map-tip__code { font-family: var(--font-mono); font-weight: 600; color: var(--text-primary); }

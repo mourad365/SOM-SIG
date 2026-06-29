@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList, CartesianGrid,
 } from 'recharts';
 import { Panel } from '../ui/index.js';
 import { LOAD, COLOR, chartAxis } from '../theme/tokens.js';
@@ -60,6 +60,7 @@ export default function Charts({ histogramme = [], alertes = [], stats }) {
         <div className="dash-chart">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={histo} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={COLOR.grid} />
               <XAxis dataKey="bin" tick={chartAxis} axisLine={{ stroke: COLOR.grid }} tickLine={false} />
               <YAxis allowDecimals={false} tick={chartAxis} axisLine={false} tickLine={false} width={28} />
               <Tooltip content={<ChartTip />} cursor={{ fill: COLOR.grid }} />
@@ -98,6 +99,7 @@ export default function Charts({ histogramme = [], alertes = [], stats }) {
         <div className="dash-chart">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={byType} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={COLOR.grid} />
               <XAxis dataKey="label" tick={{ ...chartAxis, fontSize: 10 }} axisLine={{ stroke: COLOR.grid }} tickLine={false} interval={0} />
               <YAxis allowDecimals={false} tick={chartAxis} axisLine={false} tickLine={false} width={28} />
               <Tooltip content={<ChartTip />} cursor={{ fill: COLOR.grid }} />

@@ -74,7 +74,7 @@ export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareC
 
           {isLoad && (
             <div className="inspector-gauge">
-              <Gauge value={taux} />
+              <Gauge value={taux} size={152} />
             </div>
           )}
 

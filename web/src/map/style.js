@@ -34,9 +34,10 @@ export const ligneLinePaint = {
 // Electric cyan = energy/electricity accent ONLY (see tokens). Base dasharray
 // below is the reduced-motion / initial frame; the rAF loop swaps frames.
 export const ligneFlowPaint = {
-  'line-color': BRAND.electric,
-  'line-width': 2,
-  'line-opacity': 0.9,
+  'line-color': BRAND.electricBright,
+  'line-width': 2.2,
+  'line-opacity': 0.95,
+  'line-blur': 0.6,            // soft neon bloom — current glowing in the wire
   'line-dasharray': [0, 4, 3],
 };
 
@@ -97,13 +98,15 @@ export const surchargeHeatmapPaint = {
 };
 
 // ---- Critique pulse ring (animated via rAF in Map.jsx) ----
-// A soft expanding ring under the solid transfo marker. Radius/opacity are
-// driven imperatively; these are just the static base paint props.
+// A radar-ping ring expanding under the solid transfo marker. Radius + stroke
+// opacity are driven imperatively; these are just the static base paint props.
 export const transfoCritiquePulsePaint = {
-  'circle-color': LOAD.critique,
-  'circle-radius': 10,
+  'circle-color': 'rgba(0,0,0,0)',
+  'circle-radius': 8,
   'circle-opacity': 0,
-  'circle-stroke-width': 0,
+  'circle-stroke-width': 2,
+  'circle-stroke-color': LOAD.critique,
+  'circle-stroke-opacity': 0,
 };
 
 // Filter: only critique transformers get the pulse.

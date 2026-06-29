@@ -85,16 +85,19 @@ function recentCutoffISO() {
 
 // Load the RTL shaping plugin once (needed for legible Arabic labels). Lazy = only
 // fetched the first time an Arabic glyph is rendered.
-let rtlPluginRequested = false;
+//
+// Gate on MapLibre's *global* plugin status, not a module-local flag: that flag resets
+// on every Vite HMR reload while MapLibre's registration persists, so a stale flag would
+// re-trigger setRTLTextPlugin and it throws "cannot be called multiple times". With
+// lazy=true the call also returns a promise that rejects async, so catch that too.
 function ensureRTLPlugin() {
-  if (rtlPluginRequested) return;
-  rtlPluginRequested = true;
-  try {
+  if (maplibregl.getRTLTextPluginStatus() !== 'unavailable') return;
+  Promise.resolve(
     maplibregl.setRTLTextPlugin(
       'https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js',
       null, true,
-    );
-  } catch { /* already set in this session */ }
+    ),
+  ).catch(() => { /* already registered (e.g. across an HMR reload) */ });
 }
 
 // Build a small high-DPI marker icon (square / triangle) for symbol layers, so each
@@ -206,8 +209,10 @@ export default function Map({
       // loop alive so it resumes instantly when re-shown. rAF already idles when tab hidden.
       if (map.getLayoutProperty('transfo-critique-pulse', 'visibility') !== 'none') {
         const t = ((now - start) % PERIOD) / PERIOD; // 0..1
-        map.setPaintProperty('transfo-critique-pulse', 'circle-radius', 10 + t * 16);
-        map.setPaintProperty('transfo-critique-pulse', 'circle-opacity', 0.5 * (1 - t));
+        // Radar ping: ring expands and fades. Ease-out on the fade so it lingers
+        // small/bright then races out — reads as an active sweep, not a throb.
+        map.setPaintProperty('transfo-critique-pulse', 'circle-radius', 8 + t * 24);
+        map.setPaintProperty('transfo-critique-pulse', 'circle-stroke-opacity', 0.75 * (1 - t) ** 1.5);
       }
       pulseRafRef.current = requestAnimationFrame(tick);
     };

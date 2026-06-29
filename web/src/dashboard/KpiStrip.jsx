@@ -34,7 +34,7 @@ export default function KpiStrip({ stats, loading = false }) {
 
   const tile = (label, value, opts = {}) => (
     <Stat
-      className="kpi-value"
+      className={`kpi-value${opts.tone ? ` kpi-tile--${opts.tone}` : ''}`}
       label={label}
       value={value}
       unit={opts.unit}
@@ -46,8 +46,8 @@ export default function KpiStrip({ stats, loading = false }) {
   return (
     <section className="dash-kpis" ref={ref}>
       {tile('Total actifs', countVal(totalActifs, frInt), { hero: true })}
-      {tile('Critique', countVal(critique), { color: LOAD.critique })}
-      {tile('Surcharge', countVal(surcharge), { color: LOAD.surcharge })}
+      {tile('Critique', countVal(critique), { color: LOAD.critique, tone: 'critique' })}
+      {tile('Surcharge', countVal(surcharge), { color: LOAD.surcharge, tone: 'surcharge' })}
       {tile('Réseau sain', countVal(health), { unit: '%', color: LOAD.normal })}
       {tile('Charge totale', countVal(charge, frInt), { unit: 'kVA' })}
       {tile('Postes', countVal(postes))}

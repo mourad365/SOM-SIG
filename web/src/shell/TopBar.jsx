@@ -72,8 +72,10 @@ export function TopBar({
             {f.label}
           </FilterChip>
         ))}
-        <span className="shell-maj caps">
-          Actualisé à <span className="shell-maj__time">{updatedAt || '—'}</span>
+        <span className="shell-live" title={`Flux en direct — actualisé à ${updatedAt || '—'}`}>
+          <span className="live-dot" aria-hidden="true" />
+          <span className="shell-live__label caps">En direct</span>
+          <span className="shell-live__time mono">{updatedAt || '—'}</span>
         </span>
         <Tooltip label="Actualiser">
           <Button variant="icon" aria-label="Actualiser" onClick={onRefresh} loading={refreshing}>

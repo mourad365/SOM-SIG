@@ -20,6 +20,7 @@ export const BRAND = {
   blue: '#0E5BA6',
   blueDeep: '#0A4682',
   electric: '#08AEC8',
+  electricBright: '#2BD4EC', // lit current packet on the line flow
   electricDeep: '#0B7C97',
 };
 
@@ -33,6 +34,7 @@ export const COLOR = {
   textMuted: '#8493A7',
   accent: '#0E5BA6',
   energy: '#08AEC8',
+  energyBright: '#2BD4EC',
   grid: 'rgba(16,33,61,0.07)',
 };
 
