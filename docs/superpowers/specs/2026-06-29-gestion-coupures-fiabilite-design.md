@@ -2,7 +2,7 @@
 
 > Statut : approuvé (brainstorming 2026-06-29). Chantier 5 du jumeau numérique.
 > Public visé : **exploitation SOMELEC** (conduite réseau) + direction.
-> Décision d'architecture associée : **ADR 0008** (persistance d'un registre opérationnel).
+> Décision d'architecture associée : **ADR 0009** (persistance d'un registre opérationnel).
 
 ## 1. Problème & valeur
 
@@ -55,7 +55,7 @@ fiabilité). Les deux lisent les **mêmes enregistrements `coupure`**.
    `reel`. Même posture que « ancrages réels + distribution synthétique ».
 4. **Persistance PostGIS** (écritures DB) — rupture assumée avec la règle « no-write » du
    bac à sable what-if. Un registre qui alimente des indices dans le temps *doit* persister.
-   → **ADR 0008**.
+   → **ADR 0009**.
 5. **Programmées ≠ subies dans les indices.** SAIDI/SAIFI/CAIDI se calculent sur les
    **incidents** ; les coupures programmées sont rapportées séparément. (Convention métier
    standard ; les confondre est le signe d'une métrique mal maîtrisée.)

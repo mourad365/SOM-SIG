@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { Crosshair, Share2 } from 'lucide-react';
+import { Crosshair, Share2, Zap } from 'lucide-react';
 import { Drawer, Gauge, Stat, Badge, Button, Spinner, EmptyState } from '../ui/index.js';
 import { getAsset } from '../api.js';
 import { TRACEABLE } from '../trace/useTrace.js';
@@ -20,7 +20,7 @@ const TYPE_LABEL = {
 const LOAD_TYPES = ['transfo', 'ligne'];
 
 // Right slide-in inspector. Opens when a map feature / dashboard row is selected; loads full asset detail.
-export function Inspector({ feature, open, onClose, onFlyTo, onTrace }) {
+export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareCoupure }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -127,6 +127,19 @@ export function Inspector({ feature, open, onClose, onFlyTo, onTrace }) {
               </Button>
             )}
             {/* --- end trace --- */}
+            {/* --- coupures --- déclarer une coupure depuis l'actif (Chantier 5, ADR 0009) */}
+            {onDeclareCoupure && TRACEABLE.includes(type) && (
+              <Button
+                variant="subtle" size="sm"
+                onClick={() => {
+                  const id = feature[`${type}_id`] ?? feature.id;
+                  if (id != null) onDeclareCoupure({ ...feature, type, [`${type}_id`]: Number(id) });
+                }}
+              >
+                <Zap size={14} /> Déclarer une coupure
+              </Button>
+            )}
+            {/* --- end coupures --- */}
           </div>
         </div>
       )}

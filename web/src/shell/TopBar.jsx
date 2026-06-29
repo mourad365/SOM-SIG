@@ -12,6 +12,7 @@ const VIEWS = [
   { key: 'carte', label: 'Carte' },
   { key: 'tableau', label: 'Tableau de bord' },
   { key: 'actifs', label: 'Actifs' },
+  { key: 'coupures', label: 'Coupures' }, // --- coupures --- (Chantier 5, ADR 0009)
 ];
 
 const RESULT_TYPE_LABEL = { transfo: 'Transfo', poste: 'Poste', ligne: 'Ligne', coord: 'Coord.', lieu: 'Lieu' };

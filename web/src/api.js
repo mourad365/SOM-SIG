@@ -56,6 +56,41 @@ export async function getPrevision(horizon = 0, g = 0.07) {
   return (await fetch(`${BASE}/api/prevision?${qs}`)).json();
 }
 
+// --- coupures --- Registre des coupures & cockpit fiabilité (Chantier 5, ADR 0009).
+function qsFrom(params) {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params || {})) if (v != null && v !== '') qs.set(k, v);
+  return qs.toString() ? `?${qs}` : '';
+}
+// Journal filtré → [{id_coupure, type, statut, actif_type, code_actif, cause, debut, fin,
+//                    clients_affectes, charge_kva, ens_kwh, source, duree_h, ...}]
+export async function getCoupures(params = {}) {
+  return (await fetch(`${BASE}/api/coupures${qsFrom(params)}`)).json();
+}
+export async function createCoupure(payload) {
+  const res = await fetch(`${BASE}/api/coupures`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+export async function cloturerCoupure(id, fin) {
+  const res = await fetch(`${BASE}/api/coupures/${id}/cloturer`, {
+    method: 'PATCH', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(fin ? { fin } : {}),
+  });
+  return res.json();
+}
+// Clients affectés d'une coupure → [{numero_compteur, statut, adresse, type_batiment, quartier}]
+export async function getCoupureClients(id) {
+  return (await fetch(`${BASE}/api/coupures/${id}/clients`)).json();
+}
+// Indices de fiabilité → { n_clients, incidents:{saidi_h,saifi,caidi_h,ens_kwh,n},
+//   programmees:{...}, timeline:[...], classement:[...], source_filtre, n_simule }
+export async function getFiabilite(params = {}) {
+  return (await fetch(`${BASE}/api/fiabilite${qsFrom(params)}`)).json();
+}
+// --- /coupures ---
+
 // params: { type, classe, niveau_tension, statut, q, sort, order, limit, offset }
 export async function getAssets(params = {}) {
   const qs = new URLSearchParams();

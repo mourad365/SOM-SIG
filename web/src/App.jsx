@@ -14,6 +14,8 @@ import { getSearch, getStats, getHistogramme, getAlertes, geocodePlace } from '.
 import { parseCoord } from './map/coords.js';
 import { useWhatIf } from './whatif/useWhatIf.js'; // --- whatif ---
 import WhatIfPanel from './whatif/WhatIfPanel.jsx'; // --- whatif ---
+import CoupuresView from './coupures/CoupuresView.jsx'; // --- coupures ---
+import DeclareCoupure from './coupures/DeclareCoupure.jsx'; // --- coupures ---
 import './shell/shell.css';
 
 const DEFAULT_LAYERS = { poste: false, transfo: true, ligne: true, point_service: false, support: false };
@@ -24,7 +26,7 @@ function nowHHMM() {
 
 export default function App() {
   // Top-level view: one job per screen (no longer all stacked).
-  const [view, setView] = useState('carte'); // 'carte' | 'tableau' | 'actifs'
+  const [view, setView] = useState('carte'); // 'carte' | 'tableau' | 'actifs' | 'coupures'
 
   // Map control state (lifted; passed to Map via props).
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
@@ -69,6 +71,23 @@ export default function App() {
   // Traçabilité (Chantier 1) : impact aval de l'actif sélectionné.
   const { data: trace, loading: traceLoading, error: traceError, run: runTrace, clear: clearTrace } = useTrace();
   const handleTrace = useCallback((type, id) => { runTrace(type, id); }, [runTrace]);
+
+  // --- coupures --- déclaration depuis l'inspecteur + rafraîchissement du registre.
+  // On réutilise la trace App : impact chiffré dans le tiroir + surbrillance carte (highlighted).
+  const [declareFor, setDeclareFor] = useState(null);
+  const [coupuresRefresh, setCoupuresRefresh] = useState(0);
+  const handleDeclareCoupure = useCallback((feature) => {
+    const type = feature?.type;
+    const id = feature?.[`${type}_id`] ?? feature?.id;
+    if (type && id != null) runTrace(type, Number(id));
+    setInspectorOpen(false);
+    setDeclareFor(feature);
+  }, [runTrace]);
+  const handleCoupureCreated = useCallback(() => {
+    setDeclareFor(null);
+    setCoupuresRefresh((k) => k + 1);
+    setView('coupures');
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -243,13 +262,29 @@ export default function App() {
         </div>
       )}
 
+      {/* --- coupures --- registre & cockpit fiabilité (Chantier 5, ADR 0009) */}
+      {view === 'coupures' && <CoupuresView refreshKey={coupuresRefresh} />}
+
       <Inspector
         feature={feature}
         open={inspectorOpen}
         onClose={() => setInspectorOpen(false)}
         onFlyTo={(c) => setFlyTo([...c])}
         onTrace={handleTrace}
+        onDeclareCoupure={handleDeclareCoupure} /* --- coupures --- */
       />
+
+      {/* --- coupures --- tiroir de déclaration (impact réutilisé de la trace App) */}
+      {declareFor && (
+        <DeclareCoupure
+          open={!!declareFor}
+          feature={declareFor}
+          trace={trace}
+          traceLoading={traceLoading}
+          onClose={() => setDeclareFor(null)}
+          onCreated={handleCoupureCreated}
+        />
+      )}
     </div>
   );
 }

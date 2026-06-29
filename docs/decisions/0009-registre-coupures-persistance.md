@@ -1,4 +1,4 @@
-# 0008 — Registre des coupures : persistance opérationnelle & indices de fiabilité
+# 0009 — Registre des coupures : persistance opérationnelle & indices de fiabilité
 
 Status: Accepted
 

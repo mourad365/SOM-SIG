@@ -7,6 +7,7 @@ import { apiRouter } from './api.js';
 export function createApp() {
   const app = express();
   app.use(cors());
+  app.use(express.json()); // corps JSON pour POST/PATCH (registre des coupures, ADR 0009)
   app.use('/tiles', tilesRouter);
   app.use('/api', apiRouter);
   app.get('/health', async (_req, res) => {
