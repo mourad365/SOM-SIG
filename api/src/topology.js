@@ -24,9 +24,10 @@ async function resolveTransfoIds(type, id, direction) {
   if (type === 'transfo') {
     return [id];
   }
-  // ligne (BT)
+  // ligne (BT) : une ligne BT peut avoir plusieurs alimentations (ADR 0010 #2).
   const { rows } = await query(
-    `SELECT transfo_id FROM v_charge_ligne WHERE ligne_id = $1 AND transfo_id IS NOT NULL`, [id]);
+    `SELECT id_transformateur AS transfo_id FROM alimentation_bt WHERE id_ligne_bt = $1
+     ORDER BY id_transformateur`, [id]);
   return rows.map((r) => r.transfo_id);
 }
 
@@ -85,18 +86,20 @@ export async function trace(type, id, direction = 'down') {
     };
   }
 
-  // Compteurs (clients) en aval via la chaîne du MCD, lignes BT rattachées, et charge agrégée.
+  // Compteurs (clients) en aval via la chaîne du MCD, lignes BT alimentées (jonction
+  // multi-alimentation, ADR 0010 #2), et charge agrégée. DISTINCT : une ligne partagée
+  // par 2 transfos du même ensemble ne doit pas compter deux fois.
   const [points, lignes, agg] = await Promise.all([
     query(
-      `SELECT c.id_compteur AS point_id
+      `SELECT DISTINCT c.id_compteur AS point_id
        FROM compteur c
        JOIN "local" l         ON l.id_local = c.id_local
        JOIN branchement br    ON br.id_branchement = l.id_branchement
        JOIN poteau_electrique pe ON pe.id_poteau = br.id_poteau
-       JOIN ligne_bt b        ON b.id_ligne_bt = pe.id_ligne_bt
-       WHERE b.id_transformateur = ANY($1::int[])
+       JOIN alimentation_bt ab ON ab.id_ligne_bt = pe.id_ligne_bt
+       WHERE ab.id_transformateur = ANY($1::int[])
        ORDER BY c.id_compteur`, [transfoIds]),
-    query(`SELECT id_ligne_bt AS ligne_id FROM ligne_bt WHERE id_transformateur = ANY($1::int[]) ORDER BY id_ligne_bt`, [transfoIds]),
+    query(`SELECT DISTINCT id_ligne_bt AS ligne_id FROM alimentation_bt WHERE id_transformateur = ANY($1::int[]) ORDER BY id_ligne_bt`, [transfoIds]),
     query(
       `SELECT COALESCE(SUM(charge_kva),0)::numeric AS charge_kva
        FROM v_charge_transformateur WHERE transfo_id = ANY($1::int[])`, [transfoIds]),

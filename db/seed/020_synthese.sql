@@ -44,9 +44,13 @@ FROM poste_source ps;
 --    (100 → ~50 locaux/transfo : charge typique au milieu de l'échelle kVA,
 --     évite les saturations forcées par plafond d'échelle)
 -- ============================================================================
-INSERT INTO transformateur (code_transformateur, tension_entree, tension_sortie, etat, statut, geom)
+-- sens (ADR 0010 #3) : majorité MT/BT (abaisseur, distribution) ; ~1/17 BT/MT (élévateur,
+-- injection / auto-production des sites raccordés en MT).
+INSERT INTO transformateur (code_transformateur, tension_entree, tension_sortie, etat, statut, sens, geom)
 SELECT 'TR-' || lpad((k + 1)::text, 4, '0'), '15 kV', '0.4 kV',
-       'bon', 'actif', ST_Centroid(ST_Collect(geom))
+       'bon', 'actif',
+       CASE WHEN (k + 1) % 17 = 0 THEN 'BT/MT' ELSE 'MT/BT' END,
+       ST_Centroid(ST_Collect(geom))
 FROM (SELECT ST_ClusterKMeans(geom, 100) OVER () AS k, geom FROM poteau_electrique) c
 GROUP BY k;
 
@@ -78,12 +82,32 @@ SET id_transformateur = (SELECT t.id_transformateur FROM transformateur t ORDER 
     date_mise_service = DATE '2017-01-01' + (b.id_ligne_bt * 17 % 2200),
     longueur_m = round(ST_Length(b.geom)::numeric, 1);
 
--- poteau → ligne_bt la plus proche
+-- poteau → ligne_bt la plus proche ; phases (ADR 0010 #5) : tri pour l'éclairage public
+-- et ~1/3 des supports, mono sinon.
 UPDATE poteau_electrique p
 SET id_ligne_bt = (SELECT b.id_ligne_bt FROM ligne_bt b ORDER BY b.geom <-> p.geom LIMIT 1),
     materiau = (ARRAY['beton', 'metal', 'bois'])[1 + (p.id_poteau % 3)],
     hauteur_m = COALESCE(p.hauteur_m, 8 + (p.id_poteau % 4)),
+    phases = CASE WHEN p.type_poteau LIKE '%EC%' OR p.id_poteau % 3 = 0 THEN 'tri' ELSE 'mono' END,
     etat = 'bon';
+
+-- ============================================================================
+-- 6b) MULTI-ALIMENTATION BT (ADR 0010 #2) — jonction N:N alimentation_bt.
+--   Alimentation PRINCIPALE = ligne_bt.id_transformateur (plus proche). Pour ~1/4 des
+--   lignes BT (les plus chargées en pratique), on ajoute un 2ᵉ transfo (2ᵉ plus proche).
+-- ============================================================================
+INSERT INTO alimentation_bt (id_ligne_bt, id_transformateur)
+SELECT id_ligne_bt, id_transformateur FROM ligne_bt WHERE id_transformateur IS NOT NULL;
+
+INSERT INTO alimentation_bt (id_ligne_bt, id_transformateur)
+SELECT b.id_ligne_bt, t2.id_transformateur
+FROM ligne_bt b
+CROSS JOIN LATERAL (
+  SELECT t.id_transformateur FROM transformateur t
+  ORDER BY t.geom <-> b.geom OFFSET 1 LIMIT 1
+) t2
+WHERE b.id_ligne_bt % 4 = 0 AND t2.id_transformateur <> b.id_transformateur
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- 7) QUARTIERS (dissolution des parcelles par lotissement)
@@ -134,6 +158,38 @@ UPDATE "local" l
 SET id_branchement = b.id_branchement
 FROM branchement b
 WHERE b.code_branchement = 'BR-' || lpad(l.id_local::text, 5, '0');
+
+-- ============================================================================
+-- 9b) CLIENTS MT (ADR 0010 #1) — ~1/97 des locaux sont des sites industriels raccordés
+--   directement en MT : branchement MT-direct (id_ligne_mt, sans poteau), forte demande.
+--   Sans chemin poteau→ligne_bt, ils sont exclus de la charge de distribution BT (correct :
+--   un client MT n'alourdit pas un transfo MT/BT).
+-- ============================================================================
+UPDATE "local" SET type_batiment = 'industriel', puissance_demandee = puissance_demandee * 10
+WHERE id_local % 97 = 0;
+
+UPDATE branchement br
+SET id_poteau = NULL,
+    type_branchement = 'MT',
+    id_ligne_mt = (SELECT lm.id_ligne_mt FROM ligne_mt lm ORDER BY lm.geom <-> br.geom LIMIT 1)
+FROM "local" l
+WHERE l.id_branchement = br.id_branchement AND l.id_local % 97 = 0;
+
+-- ============================================================================
+-- 9c) POSTE → QUARTIERS (ADR 0010 #4) — jonction N:N dérivée de la chaîne
+--   poste_source → transfo → alimentation_bt → ligne_bt → poteau → branchement → local.
+-- ============================================================================
+INSERT INTO poste_quartier (id_poste_source, id_quartier)
+SELECT DISTINCT dm.id_poste_source, l.id_quartier
+FROM transformateur t
+JOIN ligne_mt lm          ON lm.id_ligne_mt = t.id_ligne_mt
+JOIN depart_mt dm         ON dm.id_depart = lm.id_depart
+JOIN alimentation_bt ab   ON ab.id_transformateur = t.id_transformateur
+JOIN poteau_electrique pe ON pe.id_ligne_bt = ab.id_ligne_bt
+JOIN branchement br       ON br.id_poteau = pe.id_poteau
+JOIN "local" l            ON l.id_branchement = br.id_branchement
+WHERE dm.id_poste_source IS NOT NULL AND l.id_quartier IS NOT NULL
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- 10) COMPTEURS (1..3 par local selon le type) — POSSEDER local 1,N → compteur
@@ -200,14 +256,18 @@ WHERE l.id_branchement = br.id_branchement
 --   puissance_kva = palier standard le plus proche de charge / taux_cible ;
 --   le taux cible varie par bucket (id % 10) → mélange réaliste normal/surcharge/critique.
 -- ============================================================================
-WITH demande AS (
+-- Demande répartie à parts égales entre alimentations (ADR 0010) — MÊME formule que
+-- v_charge_transformateur, pour que le dimensionnement et l'affichage coïncident.
+WITH nb AS (SELECT id_ligne_bt, COUNT(*)::numeric AS n_feeders FROM alimentation_bt GROUP BY id_ligne_bt),
+demande AS (
   SELECT t.id_transformateur,
-         COALESCE(SUM(l.puissance_demandee), 0) AS kw
+         COALESCE(SUM(l.puissance_demandee / nb.n_feeders), 0) AS kw
   FROM transformateur t
-  LEFT JOIN ligne_bt b   ON b.id_transformateur = t.id_transformateur
-  LEFT JOIN poteau_electrique p ON p.id_ligne_bt = b.id_ligne_bt
+  LEFT JOIN alimentation_bt ab ON ab.id_transformateur = t.id_transformateur
+  LEFT JOIN nb ON nb.id_ligne_bt = ab.id_ligne_bt
+  LEFT JOIN poteau_electrique p ON p.id_ligne_bt = ab.id_ligne_bt
   LEFT JOIN branchement br ON br.id_poteau = p.id_poteau
-  LEFT JOIN "local" l    ON l.id_branchement = br.id_branchement
+  LEFT JOIN "local" l ON l.id_branchement = br.id_branchement
   GROUP BY t.id_transformateur
 ),
 cible AS (
