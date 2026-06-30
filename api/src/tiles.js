@@ -11,6 +11,7 @@ const LAYERS = {
   poste:         { rel: 'poste_source',            cols: "id_poste_source AS poste_id, ('PS-' || id_poste_source) AS code_poste, nom_poste AS nom, 'source' AS type_poste, statut, date_mise_service::text AS date_mise_service" },
   point_service: { rel: 'compteur',                cols: 'id_compteur AS point_id, numero_compteur AS num_compteur, statut, type_compteur, date_installation::text AS date_mise_service' },
   support:       { rel: 'poteau_electrique',       cols: 'id_poteau AS support_id, code_poteau AS code_actif, type_poteau AS type_support, etat' },
+  quartier:      { rel: 'quartier',                cols: 'id_quartier AS quartier_id, nom_quartier, nom_quartier AS nom, population, superficie' },
 };
 
 export const tilesRouter = Router();

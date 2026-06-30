@@ -11,6 +11,7 @@ import {
   transfoCritiquePulsePaint, CRITIQUE_FILTER,
   ligneFlowPaint, LIGNE_FLOW_FRAMES,
   recentFilter, recentRingPaint, recentLigneCasingPaint,
+  quartierFillPaint, quartierLinePaint, quartierLabelLayout, quartierLabelPaint,
 } from './style.js';
 import { classeColorExpr, COLOR, BRAND } from '../theme/tokens.js';
 import {
@@ -40,22 +41,24 @@ const SAT_ATTRIB = 'Imagery © Esri, Maxar, Earthstar Geographics';
 const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const OSM_ATTRIB = '© OpenStreetMap contributors';
 
-const DEFAULT_LAYERS = { poste: false, transfo: true, ligne: true, point_service: false, support: false };
+const DEFAULT_LAYERS = { quartier: false, poste: false, transfo: true, ligne: true, point_service: false, support: false };
 
 // Vector tile sources. source-layer == layer key.
-const SOURCES = ['transfo', 'ligne', 'poste', 'point_service', 'support'];
+const SOURCES = ['transfo', 'ligne', 'poste', 'point_service', 'support', 'quartier'];
 
 // id field returned per layer for onSelectFeature.
 const ID_FIELD = {
   transfo: 'transfo_id', ligne: 'ligne_id', poste: 'poste_id',
-  point_service: 'point_id', support: 'support_id',
+  point_service: 'point_id', support: 'support_id', quartier: 'quartier_id',
 };
 
 // Layers that carry classe/taux_charge (load-bearing) — get overloaded filter + color-by.
 const LOAD_LAYERS = ['transfo', 'ligne'];
 // Interactive layers for hover/click.
 const HOVER_LAYERS = ['transfo', 'ligne', 'poste'];
-const CLICK_LAYERS = ['transfo', 'ligne', 'poste', 'point_service', 'support'];
+const CLICK_LAYERS = ['transfo', 'ligne', 'poste', 'point_service', 'support', 'quartier-fill'];
+// Layer id → logical feature type (when they differ, e.g. the quartier fill polygon).
+const CLICK_TYPE = { 'quartier-fill': 'quartier' };
 
 // Which field each `filters` key maps to, and which layers have it.
 const FILTER_FIELDS = {
@@ -294,6 +297,27 @@ export default function Map({
       map.addLayer({ id: 'satellite', type: 'raster', source: 'sat', layout: { visibility: basemap === 'satellite' ? 'visible' : 'none' } });
     }
 
+    // Quartiers (polygones réels) — tout en bas de notre pile, sous le réseau :
+    // remplissage léger + contour pointillé + libellé. N'obscurcit pas points/lignes.
+    if (!map.getLayer('quartier-fill')) {
+      map.addLayer({
+        id: 'quartier-fill', type: 'fill', source: 'quartier', 'source-layer': 'quartier',
+        paint: quartierFillPaint, layout: { visibility: 'none' },
+      });
+    }
+    if (!map.getLayer('quartier-line')) {
+      map.addLayer({
+        id: 'quartier-line', type: 'line', source: 'quartier', 'source-layer': 'quartier',
+        paint: quartierLinePaint, layout: { visibility: 'none' },
+      });
+    }
+    if (!map.getLayer('quartier-label')) {
+      map.addLayer({
+        id: 'quartier-label', type: 'symbol', source: 'quartier', 'source-layer': 'quartier',
+        layout: { ...quartierLabelLayout, visibility: 'none' }, paint: quartierLabelPaint,
+      });
+    }
+
     // Order: recent ligne casing → lignes → current flow → heat → dots → markers.
     if (!map.getLayer('ligne-recent')) {
       map.addLayer({
@@ -320,13 +344,14 @@ export default function Map({
         minzoom: 15, paint: pointServiceCirclePaint,
       });
     }
-    // Support: triangle icon (distinct shape per type).
+    // Support: triangle icon (distinct shape per type). Visible dès le zoom ville
+    // (minzoom 11) ; petit quand on dézoome pour limiter l'encombrement, plus grand en zoom fin.
     if (!map.getLayer('support')) {
       map.addLayer({
-        id: 'support', type: 'symbol', source: 'support', 'source-layer': 'support', minzoom: 14,
+        id: 'support', type: 'symbol', source: 'support', 'source-layer': 'support', minzoom: 11,
         layout: {
           'icon-image': 'icon-support', 'icon-allow-overlap': true,
-          'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.55, 17, 0.9],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.3, 14, 0.5, 18, 0.9],
         },
       });
     }
@@ -483,8 +508,9 @@ export default function Map({
         const f = e.features[0];
         if (!f) return;
         const p = f.properties || {};
-        const fid = p[ID_FIELD[id]] ?? p.id ?? null;
-        onSelectRef.current?.({ type: id, id: fid, lng: e.lngLat.lng, lat: e.lngLat.lat, ...p });
+        const type = CLICK_TYPE[id] || id;
+        const fid = p[ID_FIELD[type]] ?? p.id ?? null;
+        onSelectRef.current?.({ type, id: fid, lng: e.lngLat.lng, lat: e.lngLat.lat, ...p });
       });
     });
 
@@ -585,6 +611,10 @@ export default function Map({
     setVis('poste', layers.poste);
     setVis('point_service', layers.point_service);
     setVis('support', layers.support);
+    // Quartiers : remplissage + contour + libellé suivent le même toggle.
+    setVis('quartier-fill', layers.quartier);
+    setVis('quartier-line', layers.quartier);
+    setVis('quartier-label', layers.quartier);
 
     // Recent-infrastructure halos: only when enabled AND parent layer is visible.
     setVis('transfo-recent', showRecent && layers.transfo);
@@ -750,7 +780,7 @@ function exportComposite(map, ctx) {
 }
 
 const LAYER_LABEL = {
-  poste: 'Postes source', transfo: 'Transformateurs', ligne: 'Lignes BT',
+  quartier: 'Quartiers', poste: 'Postes source', transfo: 'Transformateurs', ligne: 'Lignes BT',
   point_service: 'Compteurs', support: 'Poteaux',
 };
 

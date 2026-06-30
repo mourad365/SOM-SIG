@@ -63,6 +63,9 @@ export function addTraceHighlightLayers(map) {
   });
 
   // Points de service affectés (petits points pleins, accentués).
+  // NB : le contour (stroke) DOIT être conditionné au feature-state comme le fond,
+  // sinon l'anneau blanc se dessine pour TOUS les compteurs de la source (≈8k),
+  // pas seulement les points affectés → masse blanche couvrant le réseau.
   add(`${HL_PREFIX}point_service`, {
     id: `${HL_PREFIX}point_service`, type: 'circle', source: 'point_service', 'source-layer': 'point_service',
     paint: {
@@ -71,6 +74,7 @@ export function addTraceHighlightLayers(map) {
       'circle-stroke-color': COLOR.bgSurface,
       'circle-stroke-width': 1,
       'circle-opacity': stateOpacity(0.95, 0),
+      'circle-stroke-opacity': stateOpacity(0.95, 0),
     },
   });
 }

@@ -15,7 +15,7 @@ function fmt(v, digits = 0) {
 
 const TYPE_LABEL = {
   transfo: 'Transformateur', ligne: 'Ligne BT', poste: 'Poste source',
-  point_service: 'Compteur', support: 'Poteau',
+  point_service: 'Compteur', support: 'Poteau', quartier: 'Quartier',
 };
 const LOAD_TYPES = ['transfo', 'ligne'];
 
@@ -97,7 +97,14 @@ export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareC
                 <Stat label="Taux de charge" value={taux == null ? '—' : `${Math.round(taux * 100)}%`} />
               </>
             )}
-            {!isLoad && (
+            {type === 'quartier' && (
+              <>
+                {d.nom && <Stat label="Nom" value={d.nom} />}
+                <Stat label="Population" value={fmt(d.population)} />
+                <Stat label="Superficie" value={fmt(d.superficie)} unit="m²" />
+              </>
+            )}
+            {!isLoad && type !== 'quartier' && (
               <>
                 <Stat label="Type" value={d.type_poste || d.type_support || d.type_compteur || '—'} />
                 <Stat label="Statut" value={d.statut || d.etat || '—'} />

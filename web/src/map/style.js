@@ -78,6 +78,32 @@ export const supportCirclePaint = {
   'circle-opacity': 0.8,
 };
 
+// ---- Quartiers (zones / lotissements — polygones réels) ----
+// Remplissage très léger + contour pointillé bleu marque, en bas de pile pour ne
+// pas masquer le réseau. Le libellé porte le nom du quartier.
+export const quartierFillPaint = {
+  'fill-color': COLOR.accent,
+  'fill-opacity': 0.07,
+};
+export const quartierLinePaint = {
+  'line-color': COLOR.accent,
+  'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.8, 16, 2],
+  'line-opacity': 0.55,
+  'line-dasharray': [3, 2],
+};
+export const quartierLabelLayout = {
+  'text-field': ['get', 'nom_quartier'],
+  'text-size': ['interpolate', ['linear'], ['zoom'], 11, 10, 16, 14],
+  'text-transform': 'uppercase',
+  'text-letter-spacing': 0.05,
+  'text-allow-overlap': false,
+};
+export const quartierLabelPaint = {
+  'text-color': COLOR.accent,
+  'text-halo-color': '#FFFFFF',
+  'text-halo-width': 1.4,
+};
+
 // Heatmap of surcharges — weight by taux_charge over overloaded transfos.
 export const surchargeHeatmapPaint = {
   'heatmap-weight': [
