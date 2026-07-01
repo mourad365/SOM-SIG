@@ -6,3 +6,5 @@ COPY migrations/ /docker-entrypoint-initdb.d/
 # 010 = géométrie terrain réelle (généré depuis Données.zip) ; 020 = synthèse PostGIS.
 COPY seed/010_real_geometry.sql /docker-entrypoint-initdb.d/zzz-010_real_geometry.sql
 COPY seed/020_synthese.sql       /docker-entrypoint-initdb.d/zzz-020_synthese.sql
+# 030 = historique de coupures simulé (ADR 0009) — après la synthèse (transfos requis).
+COPY seed/030_coupures_historique.sql /docker-entrypoint-initdb.d/zzz-030_coupures_historique.sql

@@ -31,9 +31,18 @@
 .ui-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .ui-btn--md { height: 32px; padding: 0 var(--sp-4); }
 .ui-btn--sm { height: 26px; padding: 0 var(--sp-3); font-size: var(--fs-xs); }
-.ui-btn--primary { background: var(--accent); color: var(--text-inverse); }
-.ui-btn--primary:hover:not(:disabled) { background: var(--accent-hover); }
-.ui-btn--primary:active { background: var(--accent-press); }
+/* Primary CTA: subtle brand depth + a soft brand glow that blooms on hover. */
+.ui-btn--primary {
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent));
+  color: var(--text-inverse);
+  box-shadow: 0 1px 2px rgba(10, 70, 130, 0.25);
+}
+.ui-btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent-hover));
+  box-shadow: 0 2px 6px -1px rgba(14, 91, 166, 0.4), 0 0 0 1px var(--accent-press) inset;
+  transform: translateY(-1px);
+}
+.ui-btn--primary:active { background: var(--accent-press); transform: translateY(1px); }
 .ui-btn--subtle { background: var(--bg-surface-2); color: var(--text-primary); border-color: var(--border-subtle); }
 .ui-btn--subtle:hover:not(:disabled) { background: var(--bg-surface-3); }
 .ui-btn--ghost { background: transparent; color: var(--text-secondary); }
@@ -67,13 +76,18 @@
 
 /* ---------------- Gauge ---------------- */
 .ui-gauge { display: inline-block; position: relative; line-height: 0; }
+.ui-gauge__arc { transition: stroke var(--dur) var(--ease-out); }
+/* Critique: the load arc glows, and the whole gauge breathes once per flow cycle. */
+.ui-gauge--critique .ui-gauge__arc { filter: drop-shadow(0 0 5px var(--load-critique-glow)); }
+.ui-gauge--critique { animation: ui-gauge-breathe var(--dur-flow) var(--ease-in-out) infinite; }
+@keyframes ui-gauge-breathe { 0%, 100% { filter: none; } 50% { filter: brightness(1.04); } }
 .ui-gauge__center {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; line-height: 1;
 }
 .ui-gauge__pct { font-family: var(--font-mono); font-variant-numeric: tabular-nums;
-  font-weight: 600; color: var(--text-primary); }
-.ui-gauge__cap { color: var(--text-muted); margin-top: 2px; }
+  font-weight: 700; letter-spacing: var(--tracking-tight); color: var(--text-primary); }
+.ui-gauge__cap { color: var(--text-muted); margin-top: 3px; }
 
 /* ---------------- Table ---------------- */
 .ui-table-wrap { width: 100%; overflow: auto; }
@@ -256,10 +270,11 @@
 
 /* ---------------- Critique pulse (the memorable detail) ---------------- */
 @keyframes ui-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--load-critique-glow); }
-  50% { box-shadow: 0 0 0 4px transparent; }
+  0%   { box-shadow: 0 0 0 0 var(--load-critique-glow); }
+  70%  { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
-.ui-pulse { animation: ui-pulse 1.6s var(--ease-in-out) infinite; }
+.ui-pulse { animation: ui-pulse var(--dur-flow) var(--ease-out) infinite; }
 
 /* ---------------- Constellation (electric identity mark) ---------------- */
 .cst { display: block; overflow: visible; }
@@ -274,6 +289,52 @@
 .cst-node { fill: var(--energy); opacity: 0.55; }
 .cst-node--hub { opacity: 0.9; } /* hub node sits a touch brighter */
 
+/* ---------------- HUD: floating command-center chrome over the map ---------------- */
+/* Lightly translucent, lifted surface. Glassmorphism used purposefully here only:
+ * floating chrome reads as instrumentation hovering above the live basemap. */
+.hud {
+  background: var(--bg-float);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25);
+  backdrop-filter: blur(10px) saturate(1.25);
+  border: 1px solid var(--border-float);
+  box-shadow: var(--shadow-float);
+}
+
+/* ---------------- Live heartbeat dot (an "EN DIRECT" pulse) ---------------- */
+.live-dot { position: relative; display: inline-block; width: 7px; height: 7px; flex: none; }
+.live-dot::before, .live-dot::after {
+  content: ''; position: absolute; inset: 0; border-radius: var(--r-full); background: var(--energy);
+}
+.live-dot::after { animation: live-ping var(--dur-flow) var(--ease-out) infinite; }
+@keyframes live-ping {
+  0%   { transform: scale(1); opacity: 0.7; }
+  70%  { transform: scale(2.8); opacity: 0; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+.live-dot--critique::before { background: var(--load-critique); }
+.live-dot--critique::after  { background: var(--load-critique); }
+
+/* ---------------- Energy hairline: a thin "live feed" rule ---------------- */
+.energy-rule { height: 2px; border-radius: var(--r-full); background: var(--energy-grad);
+  box-shadow: 0 0 8px -1px var(--energy-glow); }
+
+/* ---------------- Skeleton shimmer (loading states) ---------------- */
+.skel {
+  position: relative; overflow: hidden; border-radius: var(--r-sm);
+  background: var(--bg-surface-2);
+}
+.skel::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: skel-sweep 1.25s var(--ease-in-out) infinite;
+}
+.skel--text { height: 0.7em; margin: 0.2em 0; }
+.skel--line { height: 1px; }
+@keyframes skel-sweep { 100% { transform: translateX(100%); } }
+
 @media (prefers-reduced-motion: reduce) {
   .cst-current { stroke-dashoffset: 13; } /* park the packet mid-spine, no motion */
+  .live-dot::after { animation: none; opacity: 0; }
+  .skel::after { animation: none; }
+  .ui-gauge--critique { animation: none; }
 }

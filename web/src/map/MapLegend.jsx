@@ -24,6 +24,7 @@ export function MapLegend({ colorBy = 'charge', showRecent = false }) {
         <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--poste" /> Poste source</div>
         <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--support" /> Poteau</div>
         <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--point" /> Compteur</div>
+        <div className="ui-legend__row"><span className="map-legend__sym map-legend__sym--quartier" /> Quartier</div>
       </div>
 
       {showRecent && (

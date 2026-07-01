@@ -34,9 +34,10 @@ export const ligneLinePaint = {
 // Electric cyan = energy/electricity accent ONLY (see tokens). Base dasharray
 // below is the reduced-motion / initial frame; the rAF loop swaps frames.
 export const ligneFlowPaint = {
-  'line-color': BRAND.electric,
-  'line-width': 2,
-  'line-opacity': 0.9,
+  'line-color': BRAND.electricBright,
+  'line-width': 2.2,
+  'line-opacity': 0.95,
+  'line-blur': 0.6,            // soft neon bloom — current glowing in the wire
   'line-dasharray': [0, 4, 3],
 };
 
@@ -56,13 +57,16 @@ export const posteCirclePaint = {
   'circle-opacity': 0.9,
 };
 
-// ---- Point de service (tiny dots, high zoom) ----
+// ---- Point de service / compteurs (tiny blue dots, very high zoom only) ----
+// ~8k client meters. Blue, small, and strokeless on purpose: the old near-white
+// stroke (bgBase) made each dot read as a pale halo, and en masse they buried the
+// colored transfo/ligne load markers. No stroke + low opacity + small radius lets
+// them recede; they only render at z≥15 (minzoom set in Map.jsx).
 export const pointServiceCirclePaint = {
-  'circle-color': COLOR.textSecondary,
-  'circle-radius': 2.5,
-  'circle-stroke-width': 0.5,
-  'circle-stroke-color': COLOR.bgBase,
-  'circle-opacity': 0.85,
+  'circle-color': BRAND.blue,
+  'circle-radius': ['interpolate', ['linear'], ['zoom'], 15, 1.6, 19, 3],
+  'circle-stroke-width': 0,
+  'circle-opacity': 0.7,
 };
 
 // ---- Support (tiny squares via square-ish small circles, very high zoom) ----
@@ -72,6 +76,32 @@ export const supportCirclePaint = {
   'circle-stroke-width': 0.5,
   'circle-stroke-color': COLOR.bgBase,
   'circle-opacity': 0.8,
+};
+
+// ---- Quartiers (zones / lotissements — polygones réels) ----
+// Remplissage très léger + contour pointillé bleu marque, en bas de pile pour ne
+// pas masquer le réseau. Le libellé porte le nom du quartier.
+export const quartierFillPaint = {
+  'fill-color': COLOR.accent,
+  'fill-opacity': 0.07,
+};
+export const quartierLinePaint = {
+  'line-color': COLOR.accent,
+  'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.8, 16, 2],
+  'line-opacity': 0.55,
+  'line-dasharray': [3, 2],
+};
+export const quartierLabelLayout = {
+  'text-field': ['get', 'nom_quartier'],
+  'text-size': ['interpolate', ['linear'], ['zoom'], 11, 10, 16, 14],
+  'text-transform': 'uppercase',
+  'text-letter-spacing': 0.05,
+  'text-allow-overlap': false,
+};
+export const quartierLabelPaint = {
+  'text-color': COLOR.accent,
+  'text-halo-color': '#FFFFFF',
+  'text-halo-width': 1.4,
 };
 
 // Heatmap of surcharges — weight by taux_charge over overloaded transfos.
@@ -97,13 +127,15 @@ export const surchargeHeatmapPaint = {
 };
 
 // ---- Critique pulse ring (animated via rAF in Map.jsx) ----
-// A soft expanding ring under the solid transfo marker. Radius/opacity are
-// driven imperatively; these are just the static base paint props.
+// A radar-ping ring expanding under the solid transfo marker. Radius + stroke
+// opacity are driven imperatively; these are just the static base paint props.
 export const transfoCritiquePulsePaint = {
-  'circle-color': LOAD.critique,
-  'circle-radius': 10,
+  'circle-color': 'rgba(0,0,0,0)',
+  'circle-radius': 8,
   'circle-opacity': 0,
-  'circle-stroke-width': 0,
+  'circle-stroke-width': 2,
+  'circle-stroke-color': LOAD.critique,
+  'circle-stroke-opacity': 0,
 };
 
 // Filter: only critique transformers get the pulse.

@@ -41,9 +41,14 @@
 
   /* ---- Energy accent: electric cyan. ELECTRICITY motif only (current-flow + constellation mark). ---- */
   --energy:        #08AEC8;
+  --energy-bright: #2BD4EC;   /* lit current packet / live highlight */
   --energy-deep:   #0B7C97;
+  --energy-faint:  rgba(8, 174, 200, 0.08);
   --energy-soft:   rgba(8, 174, 200, 0.18);
   --energy-glow:   rgba(8, 174, 200, 0.55);
+  --energy-glow-strong: rgba(43, 212, 236, 0.85);
+  /* Live-line gradient: the signature "current in the wire" fill. */
+  --energy-grad:   linear-gradient(90deg, var(--energy-deep), var(--energy) 45%, var(--energy-bright));
 
   /* ---- Load-state semantics: SIGNAL ONLY (tuned for white bg) ---- */
   --load-normal:    #16A34A;
@@ -66,7 +71,9 @@
   --fs-lg:    20px;
   --fs-xl:    28px;
   --fs-2xl:   34px;
+  --fs-3xl:   46px;   /* signature hero numerals (KPI hero, trace impact) */
   --tracking-caps: 0.08em;
+  --tracking-tight: -0.018em;   /* large mono readouts read tighter */
 
   /* ---- Spacing (4px base) ---- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
@@ -75,10 +82,17 @@
   /* ---- Radius ---- */
   --r-sm: 4px; --r-md: 6px; --r-lg: 8px; --r-full: 999px;
 
-  /* ---- Elevation (light-mode soft shadows) ---- */
-  --shadow-1: 0 1px 2px rgba(16, 24, 40, 0.06);
-  --shadow-2: 0 6px 20px rgba(16, 24, 40, 0.10);
-  --shadow-3: 0 16px 40px rgba(16, 24, 40, 0.16);
+  /* ---- Elevation (light-mode soft shadows, cool navy-tinted for depth) ---- */
+  --shadow-1: 0 1px 2px rgba(16, 33, 61, 0.06);
+  --shadow-2: 0 4px 12px -2px rgba(16, 33, 61, 0.10), 0 2px 4px -2px rgba(16, 33, 61, 0.06);
+  --shadow-3: 0 18px 48px -12px rgba(16, 33, 61, 0.24), 0 6px 16px -8px rgba(16, 33, 61, 0.12);
+  /* Floating map "HUD" chrome: lifted, lightly translucent over the basemap. */
+  --bg-float:      rgba(255, 255, 255, 0.86);
+  --border-float:  rgba(16, 33, 61, 0.10);
+  --shadow-float:  0 8px 28px -8px rgba(16, 33, 61, 0.28), 0 1px 0 0 rgba(255, 255, 255, 0.6) inset;
+  /* Glow elevation for LIVE / electric elements (energy) and CRITICAL alerts (load). */
+  --glow-energy:   0 0 0 1px var(--energy-soft), 0 0 16px -2px var(--energy-glow);
+  --glow-critique: 0 0 0 1px var(--load-critique-soft), 0 0 18px -2px var(--load-critique-glow);
 
   /* ---- Layout dims ---- */
   --topbar-h: 48px;
@@ -89,10 +103,14 @@
 
   /* ---- Motion ---- */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);    /* bolder, decisive entrances */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-fast: 120ms;
   --dur: 180ms;
   --dur-slow: 280ms;
+  --dur-slower: 440ms;        /* view transitions, signature reveals */
+  --dur-flow: 1600ms;         /* current-flow / heartbeat period */
   --z-map: 1; --z-chrome: 10; --z-inspector: 20; --z-modal: 40; --z-toast: 50;
 }
 

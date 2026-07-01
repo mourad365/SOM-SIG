@@ -6,6 +6,7 @@ import './shell.css';
 // Les clés restent le contrat des tuiles (cf. ADR 0007) ; seuls les libellés
 // suivent le modèle MCD : poste source, compteurs, poteaux.
 const LAYER_DEFS = [
+  { key: 'quartier', label: 'Quartiers' },
   { key: 'poste', label: 'Postes source' },
   { key: 'transfo', label: 'Transformateurs' },
   { key: 'ligne', label: 'Lignes BT' },

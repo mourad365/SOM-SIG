@@ -1,0 +1,138 @@
+/* Écrans « Gestion des coupures » (Chantier 5, ADR 0009). Tokens uniquement. */
+
+/* ---- Vue & en-tête ---- */
+.coupures-view__head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-4);
+}
+.coupures-view__sub { margin: var(--sp-1) 0 0; color: var(--text-muted); font-size: var(--fs-sm); }
+
+/* ---- Formulaire de déclaration (Drawer) ---- */
+.coupure-form { display: flex; flex-direction: column; gap: var(--sp-4); }
+.coupure-form__actif {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  padding-bottom: var(--sp-3); border-bottom: 1px solid var(--border-subtle);
+}
+.coupure-field { display: flex; flex-direction: column; gap: var(--sp-1); }
+.coupure-field__label { color: var(--text-secondary); }
+.coupure-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.coupure-input {
+  width: 100%; font-family: var(--font-ui); font-size: var(--fs-sm);
+  color: var(--text-primary); background: var(--bg-surface-2);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-3);
+}
+.coupure-input:focus-visible { box-shadow: var(--focus-ring); }
+textarea.coupure-input { resize: vertical; min-height: 38px; }
+.coupure-hint { margin: calc(var(--sp-2) * -0.5) 0 0; color: var(--text-muted); font-size: var(--fs-xs); }
+
+.coupure-impact {
+  background: var(--bg-surface-2); border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg); padding: var(--sp-3);
+}
+.coupure-impact__title { display: flex; align-items: center; gap: var(--sp-2); color: var(--text-secondary); }
+.coupure-impact__grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-2);
+}
+.coupure-form__actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-2); }
+.coupure-error { color: var(--load-critique); font-size: var(--fs-sm); margin: 0; }
+
+/* ---- Journal ---- */
+.coupure-journal__bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-3);
+}
+.coupure-filters { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.coupure-row-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; }
+.coupure-row--active { background: var(--load-critique-soft); }
+.coupure-loading {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-8); color: var(--text-muted); justify-content: center;
+}
+
+/* Horloge de rétablissement (coupure active) */
+.coupure-clock {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  font-family: var(--font-mono); color: var(--load-critique); font-weight: 600;
+}
+.coupure-clock__dot {
+  width: 7px; height: 7px; border-radius: var(--r-full);
+  background: var(--load-critique); box-shadow: 0 0 0 0 var(--load-critique-glow);
+  animation: coupure-pulse 1.6s ease-out infinite; /* période « battement » (cf. --dur-flow) */
+}
+@keyframes coupure-pulse {
+  0% { box-shadow: 0 0 0 0 var(--load-critique-glow); }
+  70% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+/* ---- Cockpit ---- */
+.coupure-cockpit { display: flex; flex-direction: column; gap: var(--sp-4); }
+.coupure-note { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); }
+.coupure-note--prog { color: var(--text-muted); font-size: var(--fs-xs); }
+.coupure-sim-tag {
+  color: var(--energy-deep); background: var(--bg-surface-2);
+  border-radius: var(--r-sm); padding: 1px var(--sp-2); font-size: var(--fs-xs);
+}
+.coupure-charts { margin: 0; }
+.coupure-classement { margin: 0; }
+
+/* ---- Avis de coupure (overlay + impression) ---- */
+.avis-overlay {
+  position: fixed; inset: 0; z-index: var(--z-modal);
+  background: var(--scrim); overflow: auto;
+  display: flex; flex-direction: column; align-items: center; padding: var(--sp-6);
+}
+.avis-toolbar {
+  display: flex; gap: var(--sp-2); margin-bottom: var(--sp-4);
+  position: sticky; top: 0;
+}
+.avis-doc {
+  background: var(--bg-surface); color: var(--text-primary);
+  width: min(820px, 100%); padding: var(--sp-8);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-3);
+}
+.avis-doc__head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  border-bottom: 2px solid var(--brand); padding-bottom: var(--sp-3); margin-bottom: var(--sp-4);
+}
+.avis-doc__brand { font-weight: 700; color: var(--brand); font-size: var(--fs-md); }
+.avis-doc__sub { color: var(--text-muted); font-size: var(--fs-xs); }
+.avis-doc__ref { text-align: right; }
+.avis-doc__title { font-weight: 700; font-size: var(--fs-md); letter-spacing: var(--tracking-caps); }
+.avis-doc__meta { color: var(--text-muted); font-size: var(--fs-xs); font-family: var(--font-mono); }
+.avis-doc__grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2) var(--sp-6); margin-bottom: var(--sp-4);
+}
+.avis-doc__grid > div { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-1) 0; border-bottom: 1px dotted var(--border); }
+.avis-k { color: var(--text-secondary); font-size: var(--fs-sm); }
+.avis-v { font-weight: 600; font-size: var(--fs-sm); text-align: right; }
+.avis-doc__comment {
+  background: var(--bg-surface-2); border-left: 3px solid var(--brand);
+  padding: var(--sp-2) var(--sp-3); margin: 0 0 var(--sp-4); font-size: var(--fs-sm); font-style: italic;
+}
+.avis-doc__clients-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--sp-2); }
+.avis-doc__h2 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: var(--tracking-caps); margin: 0; color: var(--text-secondary); }
+.avis-doc__count { color: var(--text-muted); font-size: var(--fs-xs); font-family: var(--font-mono); }
+.avis-doc__empty { color: var(--text-muted); font-size: var(--fs-sm); }
+.avis-table { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
+.avis-table th, .avis-table td { text-align: left; padding: var(--sp-1) var(--sp-2); border-bottom: 1px solid var(--border-subtle); }
+.avis-table th { color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; font-size: var(--fs-micro); }
+.avis-doc__foot {
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-3);
+  margin-top: var(--sp-6); padding-top: var(--sp-3); border-top: 1px solid var(--border);
+  color: var(--text-muted); font-size: var(--fs-xs);
+}
+
+/* Impression : ne montrer que le document. */
+@media print {
+  body * { visibility: hidden; }
+  .avis-doc, .avis-doc * { visibility: visible; }
+  .avis-overlay { position: static; padding: 0; background: none; overflow: visible; }
+  .avis-toolbar { display: none; }
+  .avis-doc { box-shadow: none; width: 100%; padding: 0; border-radius: 0; }
+}
+
+@media (max-width: 640px) {
+  .coupure-field-row, .coupure-impact__grid, .avis-doc__grid { grid-template-columns: 1fr; }
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Panel, Table, Badge, Select, SearchInput, Button, Spinner, EmptyState } from '../ui/index.js';
+import { Panel, Table, Badge, Select, SearchInput, Button, EmptyState } from '../ui/index.js';
 import { LOAD } from '../theme/tokens.js';
 import { getAssets } from '../api.js';
 
@@ -135,7 +135,9 @@ export default function AssetsTable({ filters = {}, onSelect }) {
       {error ? (
         <EmptyState message="Données indisponibles" />
       ) : loading && data.rows.length === 0 ? (
-        <div className="dash-center"><Spinner /></div>
+        <div className="dash-rows-skel" style={{ padding: 'var(--sp-3) 0' }} aria-busy="true">
+          {Array.from({ length: 8 }).map((_, i) => <span key={i} className="skel" style={{ height: 22 }} />)}
+        </div>
       ) : data.rows.length === 0 ? (
         <EmptyState message="Aucun actif" />
       ) : (

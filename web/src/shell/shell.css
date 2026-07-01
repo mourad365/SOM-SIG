@@ -30,7 +30,8 @@
   transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
 }
 .shell-nav__item:hover { background: var(--bg-surface-2); color: var(--text-primary); }
-.shell-nav__item--active { color: var(--brand); background: var(--brand-soft); }
+.shell-nav__item--active { color: var(--brand); background: var(--brand-soft); font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--brand-soft); }
 .shell-nav__badge {
   font-size: 10px; line-height: 1; padding: 2px 5px; border-radius: var(--r-full);
   background: var(--load-critique); color: #fff;
@@ -38,7 +39,7 @@
 .shell-wordmark { gap: var(--sp-3); }
 .shell-wordmark__glyph { flex: none; }
 .shell-wordmark__mark {
-  font-weight: 650; font-size: var(--fs-md); letter-spacing: -0.005em; color: var(--text-primary);
+  font-weight: 700; font-size: var(--fs-md); letter-spacing: var(--tracking-tight); color: var(--text-primary);
   white-space: nowrap;
 }
 .shell-wordmark__sub {
@@ -69,15 +70,38 @@
 .shell-topbar__right { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); flex: 0 0 auto; }
 
 /* ---- Full-screen views (Tableau / Actifs) ---- */
-.shell-view { grid-row: 2; min-height: 0; overflow-y: auto; background: var(--bg-base); }
+/* Subtle depth: full-screen views sit on a faintly graded canvas (not flat),
+ * giving the dashboard a touch of command-center atmosphere. */
+.shell-view { grid-row: 2; min-height: 0; overflow-y: auto;
+  background: radial-gradient(120% 80% at 50% -10%, var(--bg-surface-2), var(--bg-base) 60%); }
 .shell-view--pad { padding: var(--sp-5); }
-.view-title { font-size: var(--fs-lg); font-weight: 600; margin: 0 0 var(--sp-4); color: var(--text-primary); }
+.view-title { font-size: var(--fs-lg); font-weight: 700; letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--sp-4); color: var(--text-primary); }
+
+/* ---- View transitions (replay on each view switch) ---- */
+/* Map view fades only (no transform — keeps the canvas + floating chrome stable);
+ * full-screen views fade and rise. */
+@keyframes view-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes view-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.shell-main { animation: view-fade var(--dur-slow) var(--ease-out); }
+.shell-view { animation: view-in var(--dur-slower) var(--ease-out-expo); }
+@media (prefers-reduced-motion: reduce) { .shell-main, .shell-view { animation: none; } }
 
 /* Hide secondary chrome on tighter widths so the nav + search keep room. */
 @media (max-width: 1280px) { .shell-wordmark__sub { display: none; } }
-@media (max-width: 1080px) { .shell-maj { display: none; } }
-.shell-maj { color: var(--text-secondary); font-size: var(--fs-xs); white-space: nowrap; display: inline-flex; align-items: center; gap: var(--sp-1); }
-.shell-maj__time { font-family: var(--font-mono); color: var(--text-primary); }
+@media (max-width: 1080px) { .shell-live__time { display: none; } }
+@media (max-width: 960px)  { .shell-live { display: none; } }
+
+/* Live "feed" cluster: an energy heartbeat + last-update time. Says this is a
+ * live operational view (pairs with the map's energy hairline). */
+.shell-live {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  height: 26px; padding: 0 var(--sp-2) 0 var(--sp-3);
+  background: var(--energy-faint); border: 1px solid var(--energy-soft);
+  border-radius: var(--r-full); white-space: nowrap;
+}
+.shell-live__label { color: var(--energy-deep); font-weight: 600; }
+.shell-live__time { font-size: var(--fs-xs); color: var(--text-primary); font-weight: 600; }
 
 /* ---- Main row: rail + map ---- */
 .shell-main {
@@ -117,9 +141,12 @@
 /* ---- Inspector body ---- */
 .inspector-head { display: flex; flex-direction: column; gap: var(--sp-2);
   padding-bottom: var(--sp-4); margin-bottom: var(--sp-1); border-bottom: 1px solid var(--border-subtle); }
-.inspector-code { font-family: var(--font-mono); font-size: var(--fs-lg); font-weight: 600;
-  letter-spacing: -0.01em; color: var(--text-primary); }
-.inspector-gauge { display: flex; justify-content: center; padding: var(--sp-5) 0 var(--sp-6); }
+.inspector-code { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 700;
+  letter-spacing: var(--tracking-tight); color: var(--text-primary); line-height: 1.05; }
+/* The gauge is the inspector's focal point: a soft radial backdrop lifts it
+ * off the panel without a card. */
+.inspector-gauge { display: flex; justify-content: center; padding: var(--sp-6) 0 var(--sp-6);
+  background: radial-gradient(60% 60% at 50% 42%, var(--bg-surface-2), transparent 72%); }
 .inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
 .inspector-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-6);
   padding-top: var(--sp-4); border-top: 1px solid var(--border-subtle); }

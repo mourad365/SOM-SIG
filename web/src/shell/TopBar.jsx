@@ -12,6 +12,7 @@ const VIEWS = [
   { key: 'carte', label: 'Carte' },
   { key: 'tableau', label: 'Tableau de bord' },
   { key: 'actifs', label: 'Actifs' },
+  { key: 'coupures', label: 'Coupures' }, // --- coupures --- (Chantier 5, ADR 0009)
 ];
 
 const RESULT_TYPE_LABEL = { transfo: 'Transfo', poste: 'Poste', ligne: 'Ligne', coord: 'Coord.', lieu: 'Lieu' };
@@ -71,8 +72,10 @@ export function TopBar({
             {f.label}
           </FilterChip>
         ))}
-        <span className="shell-maj caps">
-          Actualisé à <span className="shell-maj__time">{updatedAt || '—'}</span>
+        <span className="shell-live" title={`Flux en direct — actualisé à ${updatedAt || '—'}`}>
+          <span className="live-dot" aria-hidden="true" />
+          <span className="shell-live__label caps">En direct</span>
+          <span className="shell-live__time mono">{updatedAt || '—'}</span>
         </span>
         <Tooltip label="Actualiser">
           <Button variant="icon" aria-label="Actualiser" onClick={onRefresh} loading={refreshing}>

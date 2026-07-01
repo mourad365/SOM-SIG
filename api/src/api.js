@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query } from './db.js';
 import { trace, TRACE_TYPES } from './topology.js';
 import { analyticsRouter } from './analytics.js';
+import { coupuresRouter } from './coupures.js'; // --- coupures ---
 
 export const apiRouter = Router();
 
@@ -251,3 +252,10 @@ apiRouter.get('/trace/:type/:id', async (req, res) => {
 // Routes définies dans analytics.js, montées ici sous /api (→ /api/pertes, /api/prevision).
 apiRouter.use('/', analyticsRouter);
 // --- /analytics ---
+
+// --- coupures ---
+// Chantier 5 (jumeau numérique) : registre des coupures & cockpit fiabilité (ADR 0009).
+// Routes définies dans coupures.js, montées ici sous /api
+// (→ /api/coupures, /api/coupures/:id/cloturer, /api/fiabilite).
+apiRouter.use('/', coupuresRouter);
+// --- /coupures ---
