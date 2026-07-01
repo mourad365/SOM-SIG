@@ -12,6 +12,7 @@ import {
   ligneFlowPaint, LIGNE_FLOW_FRAMES,
   recentFilter, recentRingPaint, recentLigneCasingPaint,
   quartierFillPaint, quartierLinePaint, quartierLabelLayout, quartierLabelPaint,
+  parcelleFillPaint, parcelleLinePaint, parcelleLabelLayout, parcelleLabelPaint,
 } from './style.js';
 import { classeColorExpr, COLOR, BRAND } from '../theme/tokens.js';
 import {
@@ -41,24 +42,24 @@ const SAT_ATTRIB = 'Imagery © Esri, Maxar, Earthstar Geographics';
 const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const OSM_ATTRIB = '© OpenStreetMap contributors';
 
-const DEFAULT_LAYERS = { quartier: false, poste: false, transfo: true, ligne: true, point_service: false, support: false };
+const DEFAULT_LAYERS = { quartier: false, parcelle: false, poste: false, transfo: true, ligne: true, point_service: false, support: false };
 
 // Vector tile sources. source-layer == layer key.
-const SOURCES = ['transfo', 'ligne', 'poste', 'point_service', 'support', 'quartier'];
+const SOURCES = ['transfo', 'ligne', 'poste', 'point_service', 'support', 'quartier', 'parcelle'];
 
 // id field returned per layer for onSelectFeature.
 const ID_FIELD = {
   transfo: 'transfo_id', ligne: 'ligne_id', poste: 'poste_id',
-  point_service: 'point_id', support: 'support_id', quartier: 'quartier_id',
+  point_service: 'point_id', support: 'support_id', quartier: 'quartier_id', parcelle: 'parcelle_id',
 };
 
 // Layers that carry classe/taux_charge (load-bearing) — get overloaded filter + color-by.
 const LOAD_LAYERS = ['transfo', 'ligne'];
 // Interactive layers for hover/click.
-const HOVER_LAYERS = ['transfo', 'ligne', 'poste', 'support'];
-const CLICK_LAYERS = ['transfo', 'ligne', 'poste', 'point_service', 'support', 'quartier-fill'];
+const HOVER_LAYERS = ['transfo', 'ligne', 'poste', 'support', 'parcelle-fill'];
+const CLICK_LAYERS = ['transfo', 'ligne', 'poste', 'point_service', 'support', 'quartier-fill', 'parcelle-fill'];
 // Layer id → logical feature type (when they differ, e.g. the quartier fill polygon).
-const CLICK_TYPE = { 'quartier-fill': 'quartier' };
+const CLICK_TYPE = { 'quartier-fill': 'quartier', 'parcelle-fill': 'parcelle' };
 
 // Which field each `filters` key maps to, and which layers have it.
 const FILTER_FIELDS = {
@@ -326,6 +327,27 @@ export default function Map({
       map.addLayer({
         id: 'quartier-label', type: 'symbol', source: 'quartier', 'source-layer': 'quartier',
         layout: { ...quartierLabelLayout, visibility: 'none' }, paint: quartierLabelPaint,
+      });
+    }
+
+    // Parcelles (lots cadastraux) — polygones individuels avec numéro de lot.
+    // Affichage à partir de zoom 15. Clic → inspecteur avec chaîne complète.
+    if (!map.getLayer('parcelle-fill')) {
+      map.addLayer({
+        id: 'parcelle-fill', type: 'fill', source: 'parcelle', 'source-layer': 'parcelle',
+        minzoom: 13, paint: parcelleFillPaint, layout: { visibility: 'none' },
+      });
+    }
+    if (!map.getLayer('parcelle-line')) {
+      map.addLayer({
+        id: 'parcelle-line', type: 'line', source: 'parcelle', 'source-layer': 'parcelle',
+        minzoom: 13, paint: parcelleLinePaint, layout: { visibility: 'none' },
+      });
+    }
+    if (!map.getLayer('parcelle-label')) {
+      map.addLayer({
+        id: 'parcelle-label', type: 'symbol', source: 'parcelle', 'source-layer': 'parcelle',
+        minzoom: 15, layout: { ...parcelleLabelLayout, visibility: 'none' }, paint: parcelleLabelPaint,
       });
     }
 
@@ -640,6 +662,10 @@ export default function Map({
     setVis('quartier-fill', layers.quartier);
     setVis('quartier-line', layers.quartier);
     setVis('quartier-label', layers.quartier);
+    // Parcelles : remplissage + contour + libellé suivent le même toggle.
+    setVis('parcelle-fill', layers.parcelle);
+    setVis('parcelle-line', layers.parcelle);
+    setVis('parcelle-label', layers.parcelle);
 
     // Recent-infrastructure halos: only when enabled AND parent layer is visible.
     setVis('transfo-recent', showRecent && layers.transfo);
@@ -805,7 +831,7 @@ function exportComposite(map, ctx) {
 }
 
 const LAYER_LABEL = {
-  quartier: 'Quartiers', poste: 'Postes source', transfo: 'Transformateurs', ligne: 'Lignes BT',
+  quartier: 'Quartiers', parcelle: 'Lots/Parcelles', poste: 'Postes source', transfo: 'Transformateurs', ligne: 'Lignes BT',
   point_service: 'Compteurs', support: 'Poteaux',
 };
 

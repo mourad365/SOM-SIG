@@ -3,6 +3,7 @@ export const TILE_BASE = BASE;
 export async function getKpi() { return (await fetch(`${BASE}/api/kpi`)).json(); }
 export async function getTopSurcharges() { return (await fetch(`${BASE}/api/top-surcharges`)).json(); }
 export async function getAsset(type, id) { return (await fetch(`${BASE}/api/asset/${type}/${id}`)).json(); }
+export async function getParcelle(id) { return (await fetch(`${BASE}/api/parcelle/${id}`)).json(); }
 
 // Traçabilité (Chantier 1) — impact amont/aval d'un actif (poste|transfo|ligne).
 // → { root, affected:{postes,transfos,lignes,points}, summary:{clients,charge_kva,transfos,lignes} }

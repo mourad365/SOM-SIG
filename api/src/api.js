@@ -229,6 +229,68 @@ apiRouter.get('/asset/:type/:id', async (req, res) => {
   }
 });
 
+// Parcelle (lot) detail — full chain: clients, compteurs, branchement, poteau, transformateur, documents.
+apiRouter.get('/parcelle/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'bad id' });
+  try {
+    // 1. Local info + chain up to transformateur / poste source.
+    const { rows: infoRows } = await query(
+      `SELECT l.id_local, l.code_local, l.lot, l.ilot, l.adresse, l.type_batiment,
+              l.puissance_demandee, l.id_quartier,
+              q.nom_quartier,
+              br.code_branchement, br.id_poteau,
+              pe.code_poteau, pe.type_poteau, pe.fonction_poteau, pe.materiau,
+              lb.code_ligne_bt, lb.id_ligne_bt,
+              t.id_transformateur, t.code_transformateur AS transfo_code, t.puissance_kva,
+              ps.id_poste_source, ps.nom_poste AS poste_nom,
+              ST_X(ST_Transform(ST_Centroid(l.geom),4326)) AS lng,
+              ST_Y(ST_Transform(ST_Centroid(l.geom),4326)) AS lat
+       FROM "local" l
+       LEFT JOIN quartier q ON q.id_quartier = l.id_quartier
+       LEFT JOIN branchement br ON br.id_branchement = l.id_branchement
+       LEFT JOIN poteau_electrique pe ON pe.id_poteau = br.id_poteau
+       LEFT JOIN ligne_bt lb ON lb.id_ligne_bt = pe.id_ligne_bt
+       LEFT JOIN transformateur t ON t.id_transformateur = lb.id_transformateur
+       LEFT JOIN ligne_mt lm ON lm.id_ligne_mt = t.id_ligne_mt
+       LEFT JOIN depart_mt dm ON dm.id_depart = lm.id_depart
+       LEFT JOIN poste_source ps ON ps.id_poste_source = dm.id_poste_source
+       WHERE l.id_local = $1`,
+      [id]);
+    if (infoRows.length === 0) return res.status(404).json({ error: 'not found' });
+    const info = infoRows[0];
+
+    // 2. Clients liés au local (N:N via client_local).
+    const { rows: clients } = await query(
+      `SELECT c.id_client, c.nom_client, c.telephone, c.adresse
+       FROM client c
+       JOIN client_local cl ON cl.id_client = c.id_client
+       WHERE cl.id_local = $1
+       ORDER BY c.nom_client`,
+      [id]);
+
+    // 3. Compteurs du local.
+    const { rows: compteurs } = await query(
+      `SELECT cp.id_compteur, cp.numero_compteur, cp.type_compteur, cp.statut, cp.date_installation
+       FROM compteur cp
+       WHERE cp.id_local = $1
+       ORDER BY cp.numero_compteur`,
+      [id]);
+
+    // 4. Documents juridiques.
+    const { rows: documents } = await query(
+      `SELECT id_document, type_document, reference, date_document::text AS date_document, statut, notes
+       FROM document_juridique
+       WHERE id_local = $1
+       ORDER BY date_document DESC`,
+      [id]);
+
+    res.json({ ...info, clients, compteurs, documents });
+  } catch (err) {
+    console.error(err); res.status(500).json({ error: 'parcelle failed' });
+  }
+});
+
 // --- trace routes (Chantier 1 — traçabilité) ---
 // GET /api/trace/:type/:id?direction=down|up  (type ∈ poste|transfo|ligne)
 // Impact amont/aval d'un actif (clients, kVA, actifs touchés). Voir topology.js.

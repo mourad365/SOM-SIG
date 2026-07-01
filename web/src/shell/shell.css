@@ -148,5 +148,14 @@
 .inspector-gauge { display: flex; justify-content: center; padding: var(--sp-6) 0 var(--sp-6);
   background: radial-gradient(60% 60% at 50% 42%, var(--bg-surface-2), transparent 72%); }
 .inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+.inspector-section { margin-top: var(--sp-6); }
+.inspector-section h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 var(--sp-3) 0; }
+.inspector-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+.inspector-list-item { display: flex; flex-direction: column; gap: 2px;
+  padding: var(--sp-2) var(--sp-3); border-radius: 6px; background: var(--bg-surface-2); }
+.inspector-list-title { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
+.inspector-list-sub { font-size: 0.75rem; color: var(--text-muted); }
+.inspector-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; margin: 0; }
 .inspector-actions { display: flex; gap: var(--sp-2); margin-top: var(--sp-6);
   padding-top: var(--sp-4); border-top: 1px solid var(--border-subtle); }

@@ -125,6 +125,52 @@ export const quartierLabelPaint = {
   'text-halo-width': 1.4,
 };
 
+// ---- Parcelles (lots cadastraux — polygones individuels) ----
+// Contour fin + remplissage semi-transparent par type de bâtiment.
+// Visible à partir de zoom 15 pour ne pas surcharger la carte.
+export const PARCELLE_TYPE_COLOR = {
+  residentiel:    '#3B82F6',
+  commercial:     '#F59E0B',
+  administratif:  '#EF4444',
+  industriel:     '#8B5CF6',
+  mixte:          '#10B981',
+};
+export const parcelleFillPaint = {
+  'fill-color': [
+    'match', ['get', 'type_batiment'],
+    'residentiel',   PARCELLE_TYPE_COLOR.residentiel,
+    'commercial',    PARCELLE_TYPE_COLOR.commercial,
+    'administratif', PARCELLE_TYPE_COLOR.administratif,
+    'industriel',    PARCELLE_TYPE_COLOR.industriel,
+    'mixte',         PARCELLE_TYPE_COLOR.mixte,
+    COLOR.textMuted,
+  ],
+  'fill-opacity': ['interpolate', ['linear'], ['zoom'], 14, 0.03, 16, 0.12, 18, 0.2],
+};
+export const parcelleLinePaint = {
+  'line-color': [
+    'match', ['get', 'type_batiment'],
+    'residentiel',   PARCELLE_TYPE_COLOR.residentiel,
+    'commercial',    PARCELLE_TYPE_COLOR.commercial,
+    'administratif', PARCELLE_TYPE_COLOR.administratif,
+    'industriel',    PARCELLE_TYPE_COLOR.industriel,
+    'mixte',         PARCELLE_TYPE_COLOR.mixte,
+    COLOR.textMuted,
+  ],
+  'line-width': ['interpolate', ['linear'], ['zoom'], 14, 0.5, 17, 1.5],
+  'line-opacity': 0.6,
+};
+export const parcelleLabelLayout = {
+  'text-field': ['get', 'lot'],
+  'text-size': ['interpolate', ['linear'], ['zoom'], 15, 9, 18, 12],
+  'text-allow-overlap': true,
+};
+export const parcelleLabelPaint = {
+  'text-color': '#374151',
+  'text-halo-color': '#FFFFFF',
+  'text-halo-width': 1.2,
+};
+
 // Heatmap of surcharges — weight by taux_charge over overloaded transfos.
 export const surchargeHeatmapPaint = {
   'heatmap-weight': [

@@ -48,3 +48,14 @@ docker exec -i postgis-container psql -U sigmr -d sig_somelec -v ON_ERROR_STOP=1
 # Recharger la vue v_charge_ligne (modifiée pour type_pose)
 docker exec postgis-container psql -U sigmr -d sig_somelec -c "DROP VIEW IF EXISTS v_charge_ligne CASCADE;"
 docker exec -i postgis-container psql -U sigmr -d sig_somelec -v ON_ERROR_STOP=1 < db/migrations/003_views.sql
+
+
+# Migration 006 — Colonnes lot/ilot sur local + table document_juridique
+docker exec -i postgis-container psql -U sigmr -d sig_somelec -v ON_ERROR_STOP=1 < db/migrations/006_parcelle_documents.sql
+ 
+# Peupler lot/ilot depuis l'adresse (si stg_parcelle n'existe plus)
+docker exec postgis-container psql -U sigmr -d sig_somelec -c "
+UPDATE \"local\" SET lot = split_part(adresse, ' / ', 1) WHERE lot IS NULL AND adresse IS NOT NULL;
+UPDATE \"local\" SET ilot = split_part(adresse, ' / ', 2) WHERE ilot IS NULL AND adresse IS NOT NULL;
+"
+

@@ -3,7 +3,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { Crosshair, Share2, Zap } from 'lucide-react';
 import { Drawer, Gauge, Stat, Badge, Button, Spinner, EmptyState } from '../ui/index.js';
-import { getAsset } from '../api.js';
+import { getAsset, getParcelle } from '../api.js';
 import { TRACEABLE } from '../trace/useTrace.js';
 import './shell.css';
 
@@ -15,7 +15,7 @@ function fmt(v, digits = 0) {
 
 const TYPE_LABEL = {
   transfo: 'Transformateur', ligne: 'Ligne BT', poste: 'Poste source',
-  point_service: 'Compteur', support: 'Poteau', quartier: 'Quartier',
+  point_service: 'Compteur', support: 'Poteau', quartier: 'Quartier', parcelle: 'Lot / Parcelle',
 };
 const LOAD_TYPES = ['transfo', 'ligne'];
 
@@ -34,6 +34,25 @@ const POSE_LABEL = {
   aerien: 'Aérien',
   souterrain: 'Souterrain',
 };
+const BATIMENT_LABEL = {
+  residentiel: 'Résidentiel',
+  commercial: 'Commercial',
+  administratif: 'Administratif',
+  industriel: 'Industriel',
+  mixte: 'Mixte',
+};
+const DOC_LABEL = {
+  titre_foncier: 'Titre foncier',
+  contrat_location: 'Contrat de location',
+  acte_vente: 'Acte de vente',
+  permis_construire: 'Permis de construire',
+};
+const DOC_STATUT_LABEL = {
+  valide: 'Valide',
+  expire: 'Expiré',
+  en_cours: 'En cours',
+  conteste: 'Contesté',
+};
 
 // Right slide-in inspector. Opens when a map feature / dashboard row is selected; loads full asset detail.
 export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareCoupure }) {
@@ -47,7 +66,16 @@ export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareC
     if (!feature) return;
     const id = feature[`${type}_id`] ?? feature.transfo_id ?? feature.ligne_id ?? feature.id;
     setDetail(feature); // seed from tile/row props immediately
-    if (id == null || !isLoad) return; // only transfo/ligne have an asset-detail endpoint
+    if (id == null) return;
+    if (type === 'parcelle') {
+      setLoading(true);
+      getParcelle(Number(id))
+        .then((d) => { if (d && !d.error) setDetail((prev) => ({ ...prev, ...d })); })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+      return;
+    }
+    if (!isLoad) return; // only transfo/ligne have an asset-detail endpoint
     setLoading(true);
     getAsset(type, id)
       .then((d) => { if (d && !d.error) setDetail((prev) => ({ ...prev, ...d })); })
@@ -132,7 +160,17 @@ export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareC
                 <Stat label="État" value={d.etat || '—'} />
               </>
             )}
-            {!isLoad && type !== 'quartier' && type !== 'support' && (
+            {type === 'parcelle' && (
+              <>
+                <Stat label="N° de lot" value={d.lot || '—'} />
+                <Stat label="Îlot" value={d.ilot || '—'} />
+                <Stat label="Code local" value={d.code_local || '—'} />
+                <Stat label="Type bâtiment" value={BATIMENT_LABEL[d.type_batiment] || d.type_batiment || '—'} />
+                <Stat label="Puissance demandée" value={fmt(d.puissance_demandee, 1)} unit="kW" />
+                {d.nom_quartier && <Stat label="Quartier" value={d.nom_quartier} />}
+              </>
+            )}
+            {!isLoad && type !== 'quartier' && type !== 'support' && type !== 'parcelle' && (
               <>
                 <Stat label="Type" value={d.type_poste || d.type_support || d.type_compteur || '—'} />
                 <Stat label="Statut" value={d.statut || d.etat || '—'} />
@@ -140,6 +178,81 @@ export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareC
               </>
             )}
           </div>
+
+          {type === 'parcelle' && (
+            <>
+              {/* Chaîne électrique amont */}
+              <div className="inspector-section">
+                <h4>Alimentation électrique</h4>
+                <div className="inspector-grid">
+                  <Stat label="Branchement" value={d.code_branchement || '—'} />
+                  <Stat label="Poteau" value={d.code_poteau || '—'} />
+                  <Stat label="Ligne BT" value={d.code_ligne_bt || '—'} />
+                  <Stat label="Transformateur" value={d.transfo_code || '—'} />
+                  {d.puissance_kva != null && <Stat label="Puissance transfo" value={fmt(d.puissance_kva)} unit="kVA" />}
+                  <Stat label="Poste source" value={d.poste_nom || '—'} />
+                </div>
+              </div>
+
+              {/* Clients liés */}
+              <div className="inspector-section">
+                <h4>Clients ({d.clients?.length || 0})</h4>
+                {d.clients?.length ? (
+                  <div className="inspector-list">
+                    {d.clients.map((c) => (
+                      <div key={c.id_client} className="inspector-list-item">
+                        <span className="inspector-list-title">{c.nom_client}</span>
+                        <span className="inspector-list-sub">{c.telephone || '—'}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="inspector-empty">Aucun client lié</p>
+                )}
+              </div>
+
+              {/* Compteurs */}
+              <div className="inspector-section">
+                <h4>Compteurs ({d.compteurs?.length || 0})</h4>
+                {d.compteurs?.length ? (
+                  <div className="inspector-list">
+                    {d.compteurs.map((c) => (
+                      <div key={c.id_compteur} className="inspector-list-item">
+                        <span className="inspector-list-title">{c.numero_compteur}</span>
+                        <span className="inspector-list-sub">
+                          {c.type_compteur || '—'} · {c.statut || '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="inspector-empty">Aucun compteur</p>
+                )}
+              </div>
+
+              {/* Documents juridiques */}
+              <div className="inspector-section">
+                <h4>Documents juridiques ({d.documents?.length || 0})</h4>
+                {d.documents?.length ? (
+                  <div className="inspector-list">
+                    {d.documents.map((doc) => (
+                      <div key={doc.id_document} className="inspector-list-item">
+                        <span className="inspector-list-title">
+                          {DOC_LABEL[doc.type_document] || doc.type_document}
+                          {doc.reference && ` · ${doc.reference}`}
+                        </span>
+                        <span className="inspector-list-sub">
+                          {doc.date_document || '—'} · {DOC_STATUT_LABEL[doc.statut] || doc.statut || '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="inspector-empty">Aucun document juridique</p>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="inspector-actions">
             <Button

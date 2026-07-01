@@ -7,6 +7,7 @@ import './shell.css';
 // suivent le modèle MCD : poste source, compteurs, poteaux.
 const LAYER_DEFS = [
   { key: 'quartier', label: 'Quartiers' },
+  { key: 'parcelle', label: 'Lots / Parcelles' },
   { key: 'poste', label: 'Postes source' },
   { key: 'transfo', label: 'Transformateurs' },
   { key: 'ligne', label: 'Lignes BT' },
