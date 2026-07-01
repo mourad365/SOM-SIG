@@ -6,7 +6,7 @@ try { process.loadEnvFile(new URL('../../.env', import.meta.url)); } catch {}
 
 const pool = new pg.Pool({
   host: process.env.POSTGRES_HOST || 'localhost',
-  port: Number(process.env.POSTGRES_PORT || 5432),
+  port: Number(process.env.POSTGRES_PORT || 5433),
   user: process.env.POSTGRES_USER || 'somelec',
   password: process.env.POSTGRES_PASSWORD || 'change_me',
   database: process.env.POSTGRES_DB || 'sig_somelec',

@@ -6,7 +6,7 @@ import './map.css';
 import { TILE_BASE } from '../api.js';
 import {
   transfoCirclePaint, ligneLinePaint, posteCirclePaint,
-  pointServiceCirclePaint, supportCirclePaint,
+  pointServiceCirclePaint,
   voltageColorExpr, surchargeHeatmapPaint, OVERLOADED_FILTER,
   transfoCritiquePulsePaint, CRITIQUE_FILTER,
   ligneFlowPaint, LIGNE_FLOW_FRAMES,
@@ -55,7 +55,7 @@ const ID_FIELD = {
 // Layers that carry classe/taux_charge (load-bearing) — get overloaded filter + color-by.
 const LOAD_LAYERS = ['transfo', 'ligne'];
 // Interactive layers for hover/click.
-const HOVER_LAYERS = ['transfo', 'ligne', 'poste'];
+const HOVER_LAYERS = ['transfo', 'ligne', 'poste', 'support'];
 const CLICK_LAYERS = ['transfo', 'ligne', 'poste', 'point_service', 'support', 'quartier-fill'];
 // Layer id → logical feature type (when they differ, e.g. the quartier fill polygon).
 const CLICK_TYPE = { 'quartier-fill': 'quartier' };
@@ -65,6 +65,8 @@ const FILTER_FIELDS = {
   niveau_tension: ['transfo', 'ligne'],
   statut: ['poste', 'point_service'],
   classe: ['transfo', 'ligne'],
+  fonction: ['support'],
+  materiau: ['support'],
 };
 
 const fmtPct = (v) => (v == null || v === '' ? '—' : `${Math.round(Number(v))}%`);
@@ -141,9 +143,18 @@ function ensureIcons(map) {
     const i = makeShapeIcon('square', { fill: BRAND.blue, stroke: '#FFFFFF' });
     map.addImage('icon-poste', i, { pixelRatio: i.pixelRatio });
   }
-  if (!map.hasImage('icon-support')) {
-    const i = makeShapeIcon('triangle', { fill: COLOR.textMuted, stroke: '#FFFFFF' });
-    map.addImage('icon-support', i, { pixelRatio: i.pixelRatio });
+  // Poteaux : un triangle coloré par fonction.
+  const poteauIcons = {
+    'icon-support':             { fill: '#6B7280', stroke: '#FFFFFF' }, // support (gris)
+    'icon-support-ec':          { fill: '#F59E0B', stroke: '#FFFFFF' }, // éclairage public (ambre)
+    'icon-support-solaire':     { fill: '#10B981', stroke: '#FFFFFF' }, // éclairage solaire (vert)
+    'icon-support-mixte':       { fill: '#8B5CF6', stroke: '#FFFFFF' }, // mixte (violet)
+  };
+  for (const [name, colors] of Object.entries(poteauIcons)) {
+    if (!map.hasImage(name)) {
+      const i = makeShapeIcon('triangle', colors);
+      map.addImage(name, i, { pixelRatio: i.pixelRatio });
+    }
   }
 }
 
@@ -344,14 +355,26 @@ export default function Map({
         minzoom: 15, paint: pointServiceCirclePaint,
       });
     }
-    // Support: triangle icon (distinct shape per type). Visible dès le zoom ville
-    // (minzoom 11) ; petit quand on dézoome pour limiter l'encombrement, plus grand en zoom fin.
+    // Support (poteaux) : triangles colorés par fonction, taille par matériau.
     if (!map.getLayer('support')) {
       map.addLayer({
         id: 'support', type: 'symbol', source: 'support', 'source-layer': 'support', minzoom: 11,
         layout: {
-          'icon-image': 'icon-support', 'icon-allow-overlap': true,
-          'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.3, 14, 0.5, 18, 0.9],
+          'icon-image': [
+            'match', ['get', 'fonction'],
+            'eclairage_public',  'icon-support-ec',
+            'eclairage_solaire', 'icon-support-solaire',
+            'mixte',             'icon-support-mixte',
+            /* support / default */ 'icon-support',
+          ],
+          'icon-allow-overlap': true,
+          'icon-size': [
+            'match', ['get', 'materiau'],
+            'bois',  0.45,
+            'beton', 0.55,
+            'metal', 0.65,
+            0.5,
+          ],
         },
       });
     }
@@ -487,7 +510,9 @@ export default function Map({
         const code = p.code_actif || p.code_poste || p.code || '—';
         const classe = p.classe ? `<span class="map-tip__classe map-tip__classe--${p.classe}">${p.classe}</span>` : '';
         const taux = 'taux_charge' in p ? `<span class="map-tip__taux">${fmtPct(p.taux_charge)}</span>` : '';
-        const html = `<div class="map-tip__code">${code}</div><div class="map-tip__meta">${classe}${taux}</div>`;
+        const fonct = p.fonction ? `<span class="map-tip__taux">${p.fonction}</span>` : '';
+        const mat = p.materiau ? `<span class="map-tip__taux">${p.materiau}</span>` : '';
+        const html = `<div class="map-tip__code">${code}</div><div class="map-tip__meta">${classe}${taux}${fonct}${mat}</div>`;
         if (!popupRef.current) {
           popupRef.current = new maplibregl.Popup({
             closeButton: false, closeOnClick: false, offset: 12, className: 'map-tip-popup',

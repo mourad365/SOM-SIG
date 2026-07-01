@@ -69,13 +69,34 @@ export const pointServiceCirclePaint = {
   'circle-opacity': 0.7,
 };
 
-// ---- Support (tiny squares via square-ish small circles, very high zoom) ----
+// ---- Support (poteaux) — differentiated by fonction (color) + materiau (size) ----
+// Couleur = fonction du poteau (support réseau, éclairage public, éclairage solaire, mixte).
+// Taille = matériau (bois plus fin, béton standard, métal plus massif).
+export const POTEAU_FONCTION = {
+  support:           '#6B7280',   // gris — support BT standard
+  eclairage_public:  '#F59E0B',   // ambre — éclairage public (réseau)
+  eclairage_solaire: '#10B981',   // vert émeraude — éclairage solaire autonome
+  mixte:             '#8B5CF6',   // violet — support + éclairage combinés
+};
+
 export const supportCirclePaint = {
-  'circle-color': COLOR.textMuted,
-  'circle-radius': 3,
-  'circle-stroke-width': 0.5,
-  'circle-stroke-color': COLOR.bgBase,
-  'circle-opacity': 0.8,
+  'circle-color': [
+    'match', ['get', 'fonction'],
+    'eclairage_public',  POTEAU_FONCTION.eclairage_public,
+    'eclairage_solaire', POTEAU_FONCTION.eclairage_solaire,
+    'mixte',             POTEAU_FONCTION.mixte,
+    /* support / default */ POTEAU_FONCTION.support,
+  ],
+  'circle-radius': [
+    'match', ['get', 'materiau'],
+    'bois',  2.5,
+    'beton', 3.5,
+    'metal', 4,
+    3,
+  ],
+  'circle-stroke-width': 1,
+  'circle-stroke-color': 'rgba(255,255,255,0.7)',
+  'circle-opacity': 0.9,
 };
 
 // ---- Quartiers (zones / lotissements — polygones réels) ----

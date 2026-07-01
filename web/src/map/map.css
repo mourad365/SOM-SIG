@@ -131,6 +131,12 @@
   border-left: 6px solid transparent; border-right: 6px solid transparent;
   border-bottom: 11px solid var(--text-muted);
 }
+.map-legend__sym--poteau-fn {
+  width: 0; height: 0; background: none;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-bottom: 9px solid currentColor;
+  margin: 0 12px 0 2px;
+}
 .map-legend__sym--point { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); margin: 0 10px 0 3px; }
 .map-legend__sym--quartier { border-radius: 2px; background: none; border: 1.5px dashed var(--brand); }
 .map-legend__sym--recent { border-radius: 50%; background: none; border: 2px solid var(--energy); }

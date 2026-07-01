@@ -202,6 +202,8 @@ export default function App() {
             onLanguage={setLanguage}
             showRecent={showRecent}
             onShowRecent={setShowRecent}
+            filters={filters}
+            onFilters={setFilters}
             /* --- whatif --- */
             whatifEnabled={whatif.enabled}
             onWhatifEnabled={whatif.toggleEnabled}

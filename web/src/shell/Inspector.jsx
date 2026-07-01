@@ -19,6 +19,22 @@ const TYPE_LABEL = {
 };
 const LOAD_TYPES = ['transfo', 'ligne'];
 
+const FONCTION_LABEL = {
+  support: 'Support BT',
+  eclairage_public: 'Éclairage public',
+  eclairage_solaire: 'Éclairage solaire',
+  mixte: 'Mixte (BT + éclairage)',
+};
+const MATERIAU_LABEL = {
+  beton: 'Béton',
+  metal: 'Métal',
+  bois: 'Bois',
+};
+const POSE_LABEL = {
+  aerien: 'Aérien',
+  souterrain: 'Souterrain',
+};
+
 // Right slide-in inspector. Opens when a map feature / dashboard row is selected; loads full asset detail.
 export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareCoupure }) {
   const [detail, setDetail] = useState(null);
@@ -90,10 +106,13 @@ export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareC
             )}
             {type === 'ligne' && (
               <>
+                <Stat label="Type de pose" value={POSE_LABEL[d.type_pose] || d.type_pose || '—'} />
+                <Stat label="Type de ligne" value={d.type_ligne || '—'} />
                 <Stat label="Niveau tension" value={d.niveau_tension || '—'} />
                 <Stat label="Section" value={fmt(d.section_mm2)} unit="mm²" />
                 <Stat label="Capacité" value={fmt(d.capacite_a)} unit="A" />
                 <Stat label="Longueur" value={fmt(d.longueur_m)} unit="m" />
+                <Stat label="État" value={d.etat || '—'} />
                 <Stat label="Taux de charge" value={taux == null ? '—' : `${Math.round(taux * 100)}%`} />
               </>
             )}
@@ -104,7 +123,16 @@ export function Inspector({ feature, open, onClose, onFlyTo, onTrace, onDeclareC
                 <Stat label="Superficie" value={fmt(d.superficie)} unit="m²" />
               </>
             )}
-            {!isLoad && type !== 'quartier' && (
+            {type === 'support' && (
+              <>
+                <Stat label="Fonction" value={FONCTION_LABEL[d.fonction] || d.fonction || '—'} />
+                <Stat label="Type" value={d.type_support || '—'} />
+                <Stat label="Matériau" value={MATERIAU_LABEL[d.materiau] || d.materiau || '—'} />
+                <Stat label="Hauteur" value={fmt(d.hauteur_m, 1)} unit="m" />
+                <Stat label="État" value={d.etat || '—'} />
+              </>
+            )}
+            {!isLoad && type !== 'quartier' && type !== 'support' && (
               <>
                 <Stat label="Type" value={d.type_poste || d.type_support || d.type_compteur || '—'} />
                 <Stat label="Statut" value={d.statut || d.etat || '—'} />

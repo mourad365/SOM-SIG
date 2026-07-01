@@ -30,6 +30,21 @@ const LANGUAGES = [
   { value: 'ar', label: 'العربية' },
 ];
 
+const FONCTION_OPTS = [
+  { value: '', label: 'Toutes' },
+  { value: 'support', label: 'Support BT' },
+  { value: 'eclairage_public', label: 'Éclairage public' },
+  { value: 'eclairage_solaire', label: 'Éclairage solaire' },
+  { value: 'mixte', label: 'Mixte' },
+];
+
+const MATERIAU_OPTS = [
+  { value: '', label: 'Tous' },
+  { value: 'beton', label: 'Béton' },
+  { value: 'metal', label: 'Métal' },
+  { value: 'bois', label: 'Bois' },
+];
+
 export function LeftRail({
   collapsed, onToggleCollapse,
   layers, onToggleLayer,
@@ -39,6 +54,7 @@ export function LeftRail({
   basemap, onBasemap,
   language, onLanguage,
   showRecent, onShowRecent,
+  filters = {}, onFilters,
   // --- whatif ---
   whatifEnabled, onWhatifEnabled,
   // --- analytics --- (chantier 3) toggles pertes & prévision
@@ -93,6 +109,30 @@ export function LeftRail({
             <Segmented tabs={LANGUAGES} value={language} onChange={onLanguage} aria-label="Langue des libellés" />
           </div>
         </section>
+
+        {layers.support && (
+          <section className="shell-rail-section">
+            <span className="shell-rail-section__title caps">Filtrer les poteaux</span>
+            <div className="shell-rail__field">
+              <span className="caps">Fonction</span>
+              <Select
+                value={filters.fonction || ''}
+                onChange={(v) => onFilters?.((f) => ({ ...f, fonction: v || undefined }))}
+                options={FONCTION_OPTS}
+                aria-label="Filtrer par fonction"
+              />
+            </div>
+            <div className="shell-rail__field">
+              <span className="caps">Matériau</span>
+              <Select
+                value={filters.materiau || ''}
+                onChange={(v) => onFilters?.((f) => ({ ...f, materiau: v || undefined }))}
+                options={MATERIAU_OPTS}
+                aria-label="Filtrer par matériau"
+              />
+            </div>
+          </section>
+        )}
 
         {/* --- whatif --- bascule du bac à sable « what-if » (simulation locale, sans écriture DB) */}
         <section className="shell-rail-section">
