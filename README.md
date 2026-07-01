@@ -33,3 +33,18 @@ commerciale sont synthétisés de façon déterministe par PostGIS (`db/seed/020
 ## Décisions
 
 Les choix d'architecture sont consignés dans `docs/decisions/` (ADR 0001–0007).
+
+
+
+
+
+
+# Migration poteaux (normalisation + colonne fonction_poteau)
+docker exec -i postgis-container psql -U sigmr -d sig_somelec -v ON_ERROR_STOP=1 < db/migrations/004_poteau_types.sql
+
+# Migration lignes (colonne type_pose)
+docker exec -i postgis-container psql -U sigmr -d sig_somelec -v ON_ERROR_STOP=1 < db/migrations/005_ligne_type_pose.sql
+
+# Recharger la vue v_charge_ligne (modifiée pour type_pose)
+docker exec postgis-container psql -U sigmr -d sig_somelec -c "DROP VIEW IF EXISTS v_charge_ligne CASCADE;"
+docker exec -i postgis-container psql -U sigmr -d sig_somelec -v ON_ERROR_STOP=1 < db/migrations/003_views.sql
